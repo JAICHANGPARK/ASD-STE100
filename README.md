@@ -15,7 +15,7 @@ As AI coding and autonomous agents perform more legwork, human engineers spend s
 
 Former OpenAI Chief Scientist and Tesla AI Director **Andrej Karpathy** highlighted this paradigm shift:
 
-> *"Writing. Something I've had success with: **Ask your LLM to explain something in ASD-STE100**, it's a controlled language specification originally developed for aerospace maintenance documentation. LLMs are well-versed in this language and it comes with heavy constraints on clean writing style that I often find a lot more readable. Sometimes I've tried to soften it a bit e.g. ask for **'80% of the way to ASD-STE100'** because the spec is quite stringent...*
+> *"Writing. Something I've had success with: **Ask your LLM to explain something in ASD-STE100**, it's a controlled language specification originally developed for aerospace maintenance documentation. LLMs well-versed in this language and it comes with heavy constraints on clean writing style that I often find a lot more readable. Sometimes I've tried to soften it a bit e.g. ask for **'80% of the way to ASD-STE100'** because the spec is quite stringent...*
 >
 > *In summary:*
 > - *As LLMs get better, they will do more and more of the legwork autonomously, and a lot more of our work will rise up the abstractions into oversight and understanding.*

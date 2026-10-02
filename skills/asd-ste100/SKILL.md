@@ -7,7 +7,7 @@ description: Explains, drafts, reviews, and validates technical documentation an
 
 A comprehensive skill for generating, transforming, and validating technical content using **ASD-STE100 (Simplified Technical English, Issue 9, January 2025)** and Andrej Karpathy's **"80% Pragmatic Mode"**.
 
-> *"Writing. Something I've had success with: Ask your LLM to explain something in ASD-STE100, it's a controlled language specification originally developed for aerospace maintenance documentation. LLMs are well-versed in this language and it comes with heavy constraints on clean writing style that I often find a lot more readable. Sometimes I've tried to soften it a bit e.g. ask for '80% of the way to ASD-STE100' because the spec is quite stringent..."*  
+> *"Writing. Something I've had success with: Ask your LLM to explain something in ASD-STE100, it's a controlled language specification originally developed for aerospace maintenance documentation. LLMs well-versed in this language and it comes with heavy constraints on clean writing style that I often find a lot more readable. Sometimes I've tried to soften it a bit e.g. ask for '80% of the way to ASD-STE100' because the spec is quite stringent..."*  
 > — **Andrej Karpathy**
 
 ---
