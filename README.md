@@ -79,16 +79,20 @@ Type `/` to see the `/asd` command:
 /asd off            # Deactivate STE mode
 ```
 
+STE mode is on by default: every answer is written in 80% ASD-STE100, and the STE pane opens after each answer. You do not need `/asd on`. Use `/asd off` to turn STE mode off.
+
 `/asd on`, `/asd 80`, `/asd strict`, and `/asd off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
 
 ### STE pane
 
-Ask Claude to explain something in ASD-STE100, or turn on STE mode with `/asd on`. After the answer, the STE pane opens beside the transcript. The pane shows the answer as an ASD-STE100 document:
+After each answer, the STE pane opens beside the transcript. When you ask for ASD-STE100 (or turn on STE mode with `/asd on`), the pane shows the answer as an ASD-STE100 document:
 
 - One sentence on each line. A sentence over the word limit shows its word count in red.
 - Numbered lines show as procedure steps.
 - **WARNING**, **CAUTION**, and **NOTE** show as signal blocks.
 - Unapproved words show in red, with the approved word after them (`utilize →USE`).
+
+For an answer that is not in STE, press `r` to rewrite it into STE.
 
 Pane keys: `v` view, `c` check (score and findings), `r` rewrite an answer that is not in STE, `x` close. The pane docks beside the transcript in the fullscreen layout. Use `/asd pane` to open it, and `/asd pane off` to stop it from opening by itself.
 

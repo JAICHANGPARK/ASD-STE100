@@ -17,7 +17,7 @@ import { STE_REQUEST } from './view.jsx';
 
 let steActive = false;
 let steMode = 'pragmatic'; // 'pragmatic' (80% Karpathy mode) or 'strict' (100% ASD-STE100)
-let paneAuto = true; // Open the STE pane by itself after an answer in STE
+let paneAuto = true; // Open the STE pane by itself after each answer
 
 // STE pane values. $.state keeps them across a reload of the module, and a write redraws the pane.
 const view = atom({ plugin: 'asd-ste100', key: 'view' }, null);
@@ -187,7 +187,7 @@ export function register(on, options = {}) {
       if (arg === 'on' || arg === 'off') {
         paneAuto = arg === 'on';
         await $.store.set('ste_pane', paneAuto);
-        return { text: `[ASD-STE100] The STE pane ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /asd pane'}.` };
+        return { text: `[ASD-STE100] The STE pane ${paneAuto ? 'opens by itself after each answer' : 'opens only with /asd pane'}.` };
       }
       await openPane($);
       return { text: '[ASD-STE100] STE pane opened. v: view · c: check · r: rewrite · x: close' };
@@ -198,7 +198,7 @@ export function register(on, options = {}) {
         text: `[ASD-STE100 Status]
 - State: ${steActive ? 'ACTIVE (automatically formatting prompts)' : 'INACTIVE'}
 - Mode: ${modeLabel()}
-- Pane: ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /asd pane'}
+- Pane: ${paneAuto ? 'opens by itself after each answer' : 'opens only with /asd pane'}
 - Commands: /asd [on|off|80|strict|pane [on|off]|check <text>|rewrite <text>]`
       };
     }
@@ -250,7 +250,7 @@ Commands:
   /asd 80             - Set to 80% Pragmatic Mode (Karpathy style, readable & fast)
   /asd strict         - Set to 100% Strict ASD-STE100 standard
   /asd pane           - Show the last answer as an STE document in a side pane
-  /asd pane [on|off]  - Open the pane by itself after an answer in STE, or not
+  /asd pane [on|off]  - Open the pane by itself after each answer, or not
   /asd check <text>   - Lint text and inspect compliance score
   /asd rewrite <text> - Rewrite text into STE format
   /asd status         - Check current mode and settings`
@@ -320,7 +320,7 @@ Commands:
       await update($, view, () => ({ text: e.answer, original: e.answer, source: 'answer', isAsked: asked }));
       await update($, report, () => reportOf(e.answer));
       await update($, tab, () => 'view');
-      if (asked && paneAuto && !(await read($, paneOpen))) void openPane($);
+      if (paneAuto && !(await read($, paneOpen))) void openPane($);
     }
     return next(e);
   });

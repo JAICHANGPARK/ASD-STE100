@@ -31,8 +31,8 @@
     "autoInject": {
       "title": "Auto Inject STE Guidelines",
       "type": "boolean",
-      "description": "Automatically append STE guidelines to all user prompts when active",
-      "default": false
+      "description": "Automatically append STE guidelines to all user prompts (STE mode on). /asd off turns it off.",
+      "default": true
     }
   },
   "homepage": "https://github.com/JAICHANGPARK/ASD-STE100",

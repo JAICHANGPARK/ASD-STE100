@@ -62,3 +62,16 @@ test('r rewrites an answer that is not in STE', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: /Use the correct filter\./ })).toBeDefined()
   await ui.unmount()
 })
+
+test('the pane opens after a plain question too', async ($, on) => {
+  const opened: string[] = []
+  on('prompt.submit', (_$: unknown, e: unknown) => e as never)
+  on('turn.complete', () => ({ text: '' }))
+  on('ui.open', (_$: unknown, e: any) => {
+    opened.push(e.id)
+    return { value: { isPlaced: true } } as never
+  })
+  await $.prompt.submit({ text: 'What is a database index?' })
+  await $.turn.complete({ answer: 'An index makes a search fast.', durationMs: 10, isAborted: false, turnId: 't', reason: 'answer' })
+  expect(opened).toContain('ste-sheet')
+})
