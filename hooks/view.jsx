@@ -31,6 +31,7 @@ export function blocksOf(answer) {
   const blocks = [];
   let paragraph = [];
   let code = null;
+  let lang = '';
   const flush = () => {
     if (paragraph.length) blocks.push({ kind: 'text', text: plain(paragraph.join(' ')) });
     paragraph = [];
@@ -39,7 +40,7 @@ export function blocksOf(answer) {
   for (const line of (answer || '').split('\n')) {
     if (code) {
       if (/^\s*```/.test(line)) {
-        blocks.push({ kind: 'code', lines: code });
+        blocks.push({ kind: 'code', lang, lines: code });
         code = null;
       } else {
         code.push(line);
@@ -49,6 +50,7 @@ export function blocksOf(answer) {
     if (/^\s*```/.test(line)) {
       flush();
       code = [];
+      lang = line.trim().slice(3).trim();
       continue;
     }
     if (!line.trim()) {
@@ -82,18 +84,29 @@ export function blocksOf(answer) {
     if (/^\s*\|/.test(line)) {
       flush();
       const last = blocks[blocks.length - 1];
-      if (!/^\s*\|[\s:|-]+\|\s*$/.test(line)) {
-        if (last && last.kind === 'table') last.lines.push(line.trim());
-        else blocks.push({ kind: 'table', lines: [line.trim()] });
-      }
+      if (last && last.kind === 'table') last.lines.push(line.trim());
+      else blocks.push({ kind: 'table', lines: [line.trim()] });
       continue;
     }
     paragraph.push(line.trim());
   }
-  if (code) blocks.push({ kind: 'code', lines: code });
+  if (code) blocks.push({ kind: 'code', lang, lines: code });
   flush();
   return blocks;
 }
+
+// A code block or a table, drawn as markdown the way an assistant reply draws it
+function markdownBlock(els, key, b) {
+  const { h, Text, Markdown } = els;
+  const text = b.kind === 'code'
+    ? ['```' + (b.lang || ''), ...b.lines, '```'].join('\n')
+    : b.lines.join('\n');
+  if (!Markdown) return b.lines.map((line, i) => <Text key={`${key}-${i}`} dimColor wrap="truncate-end">{line}</Text>);
+  return [<Markdown key={key} text={text.slice(0, 10000)} />];
+}
+
+// A heading without the number the model wrote, so the page numbers it once ("2. State" -> "State")
+const unnumbered = (name) => name.replace(/^\s*(?:\d+(?:\.\d+)*|[A-Za-z])[.)]\s+/, '');
 
 // One sentence with its unapproved words marked, and its word count when it is too long
 function sentenceLine({ h, Text }, report, key, prefix, limitOf) {
@@ -164,7 +177,7 @@ export function viewRows(els, text, { mode, limitOf, columns }) {
       continue;
     }
     if (b.kind === 'code' || b.kind === 'table') {
-      for (const line of b.lines) rows.push(<Text key={key()} dimColor wrap="truncate-end">{`  ${line}`}</Text>);
+      rows.push(...markdownBlock(els, key(), b));
       continue;
     }
     // Descriptive text: one sentence on each line, then a gap after the paragraph
@@ -178,7 +191,7 @@ export function viewRows(els, text, { mode, limitOf, columns }) {
 export function titleOf(text) {
   const titles = blocksOf(text).filter(b => b.kind === 'title');
   const first = titles.find(b => b.level === 1) || titles[0];
-  return first ? first.text : '';
+  return first ? unnumbered(first.text) : '';
 }
 
 const letter = (i) => String.fromCharCode(65 + (i % 26));
@@ -211,7 +224,7 @@ export function manualRows(els, text, { mode, limitOf, columns }) {
     sentence = 0;
     item = 0;
     if (rows.length) rows.push(<Text key={key()}> </Text>);
-    rows.push(<Text key={key()} bold>{`${section}. ${name.toUpperCase()}`}</Text>);
+    rows.push(<Text key={key()} bold>{`${section}. ${unnumbered(name).toUpperCase()}`}</Text>);
   };
   // A numbered line whose wrapped lines start under the text, not under the number
   const numbered = (indent, mark, body, color) => (
@@ -225,7 +238,7 @@ export function manualRows(els, text, { mode, limitOf, columns }) {
 
   for (const b of blocksOf(text)) {
     if (b.kind === 'title') {
-      if (!titleSkipped && b.text === title) {
+      if (!titleSkipped && unnumbered(b.text) === title) {
         titleSkipped = true;
         continue;
       }
@@ -259,7 +272,7 @@ export function manualRows(els, text, { mode, limitOf, columns }) {
       continue;
     }
     if (b.kind === 'code' || b.kind === 'table') {
-      for (const line of b.lines) rows.push(<Text key={key()} dimColor wrap="truncate-end">{`     ${line}`}</Text>);
+      rows.push(<Box key={key()} flexDirection="column" paddingLeft={3}>{markdownBlock(els, key(), b)}</Box>);
       continue;
     }
     item = 0;

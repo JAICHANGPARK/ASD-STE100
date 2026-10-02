@@ -116,6 +116,7 @@ Original → STE: avg words 19 → 7 · too long 3 → 0
 - A header block, as in an aircraft maintenance manual: the task number, the title, the page block (`001` description and operation, `201` maintenance practices when the text has steps), effectivity, mode, revision and date.
 - Sections numbered `1.`, sentences `A.`, procedure steps `(1)`, list items `(a)`. One idea in each sentence.
 - **WARNING**, **CAUTION**, and **NOTE** as boxes with the signal word in the middle.
+- Code blocks and tables drawn as markdown, as in an assistant reply.
 - Unapproved words in red, with the approved word after them (`utilize →USE`).
 - A footer block with the standard, the STE check score and the page. The change summary sits above it. Each `r` adds one to the revision.
 - The STE version uses the language of the answer. A Korean answer becomes a Korean STE document: the mod applies the STE rules (short sentences, one idea in each sentence, the active voice, simple words) to that language.

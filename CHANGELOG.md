@@ -3,6 +3,12 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+15] - 2026-10-02
+
+### Fixed
+- **Code blocks and tables in the STE pane draw as markdown**, as in an assistant reply: code with syntax colors, tables with borders. Before, they showed as dim raw text.
+- **Section numbers are no longer doubled** ("5. 2. STATEFULWIDGET"). The pane removes the number that the model wrote in a heading and numbers each section once.
+
 ## [2026.10.2+14] - 2026-10-02
 
 ### Changed
@@ -128,6 +134,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+15]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B15
 [2026.10.2+14]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B14
 [2026.10.2+13]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B13
 [2026.10.2+12]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B12

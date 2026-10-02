@@ -132,3 +132,31 @@ test('by default the answer stays as Claude wrote it', async ($, on) => {
   const composed = await ($.prompt as any).compose({ model: 'claude-opus-5-5', promptModel: 'claude-opus-5-5', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] })
   expect(composed.sections.map((s: any) => s.id)).not.toContain('asd-ste100:directive')
 })
+
+test('code blocks and tables draw as markdown, and model numbers are not doubled', async ($, on) => {
+  const doc = [
+    '# Flutter Widgets',
+    '',
+    '## 2. StatefulWidget',
+    '',
+    'A StatefulWidget keeps data in a State object.',
+    '',
+    '```dart',
+    'class Counter extends StatefulWidget {}',
+    '```',
+    '',
+    '| Category | Examples |',
+    '|---|---|',
+    '| Layout | `Row`, `Column` |',
+  ].join(String.fromCharCode(10))
+  const { turn, clock } = setup(on, $, doc)
+  await turn('Explain Flutter widgets', 'Flutter widgets are the parts of the screen.')
+  await clock.advance(1)
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ plugin: 'asd-ste100', surface, ...pane(72) })
+    expect(await ui.find({ type: 'Text', text: /^1\. STATEFULWIDGET$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /1\. 2\./ })).toBeUndefined()
+    expect(await ui.findAll({ type: 'Markdown' })).toHaveLength(2)
+    await ui.unmount()
+  }
+})
