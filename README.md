@@ -70,8 +70,8 @@ Type `/` to see the `/asd` command:
 
 ```text
 /asd on             # Activate automatic STE prompt enhancement
-/asd 80             # Set to Karpathy's 80% Pragmatic Mode (recommended)
-/asd strict         # Set to 100% Strict ASD-STE100 Mode
+/asd 80             # Use Karpathy's 80% Pragmatic Mode (recommended); changes only the mode
+/asd strict         # Use 100% Strict ASD-STE100 Mode; changes only the mode
 /asd pane           # Show the last answer as an STE document in a side pane
 /asd auto [on|off]  # Rewrite each answer as an STE document in the pane (default on)
 /asd check <text>   # Lint and score a sentence or paragraph
@@ -82,7 +82,7 @@ Type `/` to see the `/asd` command:
 
 The mod keeps Claude's answer as Claude wrote it. After each answer, the STE pane opens and shows that answer converted into an ASD-STE100 document. You do not need `/asd on` for the pane. Use `/asd on` only when you want Claude to write the answer itself in STE (the same effect as the skill). Use `/asd off` to go back.
 
-`/asd on`, `/asd 80`, `/asd strict`, and `/asd off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
+`/asd 80` and `/asd strict` change only the mode that the pane and STE mode use. Only `/asd on` makes the answer itself STE. `/asd on`, `/asd 80`, `/asd strict`, and `/asd off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
 
 ### STE pane
 

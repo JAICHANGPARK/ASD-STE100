@@ -205,20 +205,16 @@ export function register(on, options = {}) {
 
     if (sub === '80' || sub === 'pragmatic') {
       steMode = 'pragmatic';
-      steActive = true;
       await $.store.set('ste_mode', 'pragmatic');
-      await $.store.set('ste_active', true);
       refreshUi($);
-      return { text: '[ASD-STE100] Switched to 80% Pragmatic Mode (Karpathy style): short punchy sentences (<=25 words), active voice, 1 idea/sentence, clean modern vocabulary.' };
+      return { text: '[ASD-STE100] Mode: 80% Pragmatic (Karpathy style): sentences <= 25 words, active voice, one idea in each sentence. The STE pane uses this mode. Use /asd on to make the answer itself STE.' };
     }
 
     if (sub === '100' || sub === 'strict') {
       steMode = 'strict';
-      steActive = true;
       await $.store.set('ste_mode', 'strict');
-      await $.store.set('ste_active', true);
       refreshUi($);
-      return { text: '[ASD-STE100] Switched to 100% Strict Mode (ASD-STE100 Issue 9): max 20 words for procedures, max 25 for descriptions, approved vocabulary, active voice, no semicolons or contractions.' };
+      return { text: '[ASD-STE100] Mode: 100% Strict (ASD-STE100 Issue 9): max 20 words for procedures, max 25 for descriptions, approved vocabulary, active voice. The STE pane uses this mode. Use /asd on to make the answer itself STE.' };
     }
 
     if (sub === 'auto') {

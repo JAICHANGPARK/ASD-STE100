@@ -3,6 +3,11 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+18] - 2026-10-02
+
+### Fixed
+- **`/asd 80` and `/asd strict` change only the mode.** They also turned on STE mode, so Claude wrote the answer itself in STE, and the pane's STE version showed almost the same text. Only `/asd on` turns on STE mode now.
+
 ## [2026.10.2+17] - 2026-10-02
 
 ### Fixed
@@ -146,6 +151,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+18]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B18
 [2026.10.2+17]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B17
 [2026.10.2+16]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B16
 [2026.10.2+15]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B15
