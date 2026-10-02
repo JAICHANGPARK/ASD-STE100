@@ -35,10 +35,8 @@ const modeLabel = () => (steMode === 'strict' ? 'STRICT 100%' : 'PRAGMATIC 80%')
 const modeName = (mode) => (mode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100 (Karpathy Pragmatic Mode)');
 
 // Ask the model for the rewritten text only, without commentary
-// Ask the model for the answer as an ASD-STE100 document, for the pane
-const documentPrompt = (mode, text) => `Rewrite the text below as an ASD-STE100 document in ${modeName(mode)}.
-Follow these rules:
-- Start with a short title line: "# <title>".
+// The structure of an ASD-STE100 document, for the answer itself and for the pane's rewrite
+const documentRules = (mode) => `- Start with a short title line: "# <title>".
 - Give each topic its own "## <heading>". Write a maximum of 6 sentences in each paragraph.
 - Write one idea in each sentence. Do not join two clauses with ", and" or ", so".
 - Write a maximum of ${mode === 'strict' ? 20 : 25} words in each sentence. Use the active voice.
@@ -46,7 +44,19 @@ Follow these rules:
 - Use simple, literal words. Do not use idioms.
 - Write procedures as numbered steps, with one command in each step.
 - Write risks as "WARNING:" (injury, data loss) or "CAUTION:" (damage) lines.
-- Keep code blocks, code names and technical names unchanged.
+- Keep code blocks, code names and technical names unchanged.`;
+
+// The system prompt section while STE mode is on. The structure applies to every explanation.
+const directiveOf = (mode) => `${buildSystemPrompt({ mode })}
+
+ASD-STE100 MODE IS ON. Write every explanation in the chat as an ASD-STE100 document:
+${documentRules(mode)}
+These rules apply even when the prompt asks for another form, for example "one long paragraph" or "a detailed essay". Give the same detail, but in this structure. The rules apply to your prose only, not to code, commands or file contents that you write with tools.`;
+
+// Ask the model for the answer as an ASD-STE100 document, for the pane
+const documentPrompt = (mode, text) => `Rewrite the text below as an ASD-STE100 document in ${modeName(mode)}.
+Follow these rules:
+${documentRules(mode)}
 Output only the document.
 
 ${text}`;
@@ -323,7 +333,7 @@ Commands:
       ...composed,
       sections: [
         ...composed.sections,
-        { id: 'asd-ste100:directive', text: buildSystemPrompt({ mode: steMode }), scope: 'session' }
+        { id: 'asd-ste100:directive', text: directiveOf(steMode), scope: 'session' }
       ]
     };
   });

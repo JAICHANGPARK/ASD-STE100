@@ -80,7 +80,7 @@ Type `/` to see the `/asd` command:
 /asd off            # Deactivate STE mode
 ```
 
-STE mode is on by default: every answer is written in 80% ASD-STE100, and the STE pane opens after each answer. You do not need `/asd on`. Use `/asd off` to turn STE mode off.
+STE mode is on by default: every answer is written as an 80% ASD-STE100 document (a title, headings, short paragraphs, one idea in each sentence, numbered steps), even when the prompt asks for one long paragraph, and the STE pane opens after each answer. You do not need `/asd on`. Use `/asd off` to turn STE mode off.
 
 `/asd on`, `/asd 80`, `/asd strict`, and `/asd off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
 

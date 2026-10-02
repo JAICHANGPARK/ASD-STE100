@@ -3,6 +3,11 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+10] - 2026-10-02
+
+### Changed
+- **Answers follow the ASD-STE100 document structure** while STE mode is on: a title, one heading for each topic, short paragraphs, one idea in each sentence, numbered steps and signal words. The structure applies even when the prompt asks for "one long paragraph". It applies to prose only, not to code or files.
+
 ## [2026.10.2+9] - 2026-10-02
 
 ### Changed
@@ -102,6 +107,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+10]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B10
 [2026.10.2+9]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B9
 [2026.10.2+8]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B8
 [2026.10.2+7]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B7

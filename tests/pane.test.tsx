@@ -105,7 +105,9 @@ test('STE mode adds its rules to the system prompt and keeps the prompt as typed
   await $.prompt.submit({ text: 'What is a database index?' })
   expect(seen).toBe('What is a database index?')
   const composed = await ($.prompt as any).compose({ model: 'claude-opus-5-5', promptModel: 'claude-opus-5-5', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] })
-  expect(composed.sections.map((s: any) => s.id)).toContain('asd-ste100:directive')
+  const directive = composed.sections.find((s: any) => s.id === 'asd-ste100:directive')
+  expect(directive.text).toContain('ASD-STE100 MODE IS ON')
+  expect(directive.text).toContain('even when the prompt asks for another form')
 })
 
 test('an answer with the word "constructor" draws', async ($, on) => {
