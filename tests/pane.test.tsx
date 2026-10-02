@@ -53,6 +53,8 @@ test('each answer is rewritten as an ASD-STE100 document in the pane', async ($,
         await clock.advance(1)
       }
       expect(await ui.find({ type: 'Text', text: /STE version/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /Original → STE: .*avg words \d+ → \d+/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /too long 1 → 0/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /^Replace the filter$/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /→USE/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /^WARNING$/ })).toBeDefined()

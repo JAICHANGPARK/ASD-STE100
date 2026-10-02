@@ -3,6 +3,11 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+12] - 2026-10-02
+
+### Added
+- **Change summary in the STE pane:** one line under the header says what the STE rewrite changed, for example `Original → STE: avg words 19 → 7 · too long 3 → 0 · tables 1 → 0 · phrasal verbs 2 → 0`. The mod measures both texts with its own checker, with no extra model call.
+
 ## [2026.10.2+11] - 2026-10-02
 
 ### Changed
@@ -112,6 +117,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+12]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B12
 [2026.10.2+11]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B11
 [2026.10.2+10]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B10
 [2026.10.2+9]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B9

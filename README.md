@@ -94,7 +94,7 @@ After each answer, the STE pane opens beside the transcript. A small model (haik
 - **WARNING**, **CAUTION**, and **NOTE** as signal blocks.
 - Unapproved words in red, with the approved word after them (`utilize →USE`).
 
-The header shows the STE check score of the text in view. Pane keys: `v` STE version, `o` original answer, `c` check (score and findings), `r` rewrite again, `x` close.
+The header shows the STE check score of the text in view, and one line that says what the rewrite changed, for example `Original → STE: avg words 19 → 7 · too long 3 → 0 · tables 1 → 0 · phrasal verbs 2 → 0`. Pane keys: `v` STE version, `o` original answer, `c` check (score and findings), `r` rewrite again, `x` close.
 
 The rewrite costs one small model call for each answer. Use `/asd auto off` to stop it, and press `r` when you want a rewrite. The pane docks beside the transcript in the fullscreen layout. Use `/asd pane` to open it, and `/asd pane off` to stop it from opening by itself.
 

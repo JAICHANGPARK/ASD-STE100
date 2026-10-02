@@ -1,6 +1,6 @@
 {
   "name": "asd-ste100",
-  "version": "2026.10.2+11",
+  "version": "2026.10.2+12",
   "description": "ASD-STE100 Simplified Technical English & 80% Karpathy Mode plugin, mod, and skill for Claude Code and AI coding assistants.",
   "type": "module",
   "main": "lib/ste-engine.js",

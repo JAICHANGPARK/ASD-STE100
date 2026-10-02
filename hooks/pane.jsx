@@ -8,8 +8,9 @@
  *   x  close
  */
 
-import { clip, findingRows, findingsOf, lengthRows } from './sheet.jsx';
-import { viewRows } from './view.jsx';
+import { validateText } from '../lib/ste-engine.js';
+import { clip, findingRows, findingsOf, lengthRows, proseOf } from './sheet.jsx';
+import { blocksOf, viewRows } from './view.jsx';
 
 export const PANE_ID = 'ste-sheet';
 
@@ -36,6 +37,48 @@ function checkRows(els, report, limitOf, columns) {
     <Text key="find" bold>Findings</Text>,
     ...findingRows(els, findingsOf(report), columns, 30),
   ];
+}
+
+// What one text measures for the change summary
+export function statsOf(text, mode, limitOf) {
+  const prose = proseOf(text);
+  const report = prose ? validateText(prose, { mode }) : { sentences: [], averageWordsPerSentence: 0 };
+  const count = (type) => report.sentences.reduce((n, s) => n + s.issues.filter(i => i.type === type && !i.permitted).length, 0);
+  return {
+    sentences: report.sentences.length,
+    avgWords: Math.round(report.averageWordsPerSentence),
+    tooLong: report.sentences.filter(s => s.wordCount > limitOf(s)).length,
+    tables: blocksOf(text).filter(b => b.kind === 'table').length,
+    phrasal: count('PHRASAL_VERB'),
+    passive: count('PASSIVE_VOICE'),
+    unapproved: count('UNAPPROVED_WORD'),
+  };
+}
+
+// One line that says what the STE rewrite changed, for example "avg words 19 → 7"
+function changeRows(els, before, after, columns) {
+  const { h, Text } = els;
+  const items = [
+    ['sentences', before.sentences, after.sentences],
+    ['avg words', before.avgWords, after.avgWords],
+    ['too long', before.tooLong, after.tooLong],
+    ['tables', before.tables, after.tables],
+    ['phrasal verbs', before.phrasal, after.phrasal],
+    ['passive', before.passive, after.passive],
+    ['unapproved words', before.unapproved, after.unapproved],
+  ].filter(([, a, b]) => a !== b);
+  if (items.length === 0) {
+    return [<Text key="chg-none" dimColor>Original → STE: no measured change</Text>];
+  }
+  const parts = items.map(([label, a, b], n) => (
+    <Text key={`chg-${n}`}>
+      {n > 0 ? <Text dimColor> · </Text> : null}
+      <Text dimColor>{`${label} `}</Text>
+      <Text>{`${a} → `}</Text>
+      <Text color={label === 'sentences' ? undefined : b < a ? 'green' : 'yellow'}>{String(b)}</Text>
+    </Text>
+  ));
+  return [<Text key="chg"><Text dimColor>Original → STE: </Text>{parts}</Text>];
 }
 
 /**
@@ -71,6 +114,9 @@ export function drawPane(els, pane, columns) {
     body = tab === 'check' && report
       ? checkRows(els, report, limitOf, width)
       : viewRows(els, view.text, { mode, limitOf, columns: width });
+    if (view.source === 'rewrite') {
+      status = [status, ...changeRows(els, statsOf(view.original, mode, limitOf), statsOf(view.text, mode, limitOf), width)];
+    }
   }
 
   return (
