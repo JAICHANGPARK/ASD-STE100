@@ -1,0 +1,64 @@
+import { expect, test } from 'claude-code/testing'
+
+const STE_ANSWER = `# Replace the filter
+
+The pump supplies fuel to the engine. You must utilize the correct filter.
+
+1. Stop the pump.
+2. Remove the old filter.
+
+WARNING: Do not touch the pump when it is hot. Hot parts can cause injury.`
+
+const pane = (bodyColumns: number) => ({
+  component: 'Pane',
+  requestId: 'ste-sheet',
+  props: { title: 'STE', isFocused: true, bodyColumns, placement: 'dock' },
+}) as const
+
+const setup = (on: any, $: any) => {
+  on('prompt.submit', (_$: unknown, e: unknown) => e)
+  on('turn.complete', () => ({ text: '' }))
+  on('ui.open', () => ({ value: { isPlaced: true } }) as never)
+  on('ui.render', ($e: any, e: any) => {
+    const { Box } = $e.ui.resolve(e)
+    return <Box />
+  })
+  return async (prompt: string, answer: string) => {
+    await $.prompt.submit({ text: prompt })
+    await $.turn.complete({ answer, durationMs: 10, isAborted: false, turnId: 't', reason: 'answer' })
+  }
+}
+
+test('an answer asked in ASD-STE100 shows as an STE document', async ($, on) => {
+  const turn = setup(on, $)
+  await turn('Explain filter replacement in ASD-STE100', STE_ANSWER)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    for (const columns of [40, 70]) {
+      const ui = await $.ui.mount({ plugin: 'asd-ste100', surface, ...pane(columns) })
+      expect(await ui.find({ type: 'Text', text: /Answer written in STE/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^Replace the filter$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /→USE/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /^WARNING$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /1\. Stop the pump/ })).toBeDefined()
+
+      await ui.press({ key: 'tab-check' })
+      expect(await ui.find({ type: 'Text', text: /score/ })).toBeDefined()
+      await ui.press({ key: 'tab-view' })
+      await ui.unmount()
+    }
+  }
+})
+
+test('r rewrites an answer that is not in STE', async ($, on) => {
+  const turn = setup(on, $)
+  on('model.complete', () => ({ value: { isAnswered: true, text: 'Use the correct filter.', usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 } } }) as never)
+  await turn('How do I replace the filter?', 'You should utilize the correct filter prior to commencing operation.')
+
+  const ui = await $.ui.mount({ plugin: 'asd-ste100', surface: 'terminal', ...pane(60) })
+  expect(await ui.find({ type: 'Text', text: /not in STE/ })).toBeDefined()
+  await ui.press({ key: 'rewrite' })
+  expect(await ui.find({ type: 'Text', text: /Rewritten in STE/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Use the correct filter\./ })).toBeDefined()
+  await ui.unmount()
+})

@@ -1,6 +1,6 @@
 {
   "name": "asd-ste100",
-  "version": "2026.10.3",
+  "version": "2026.10.2+3",
   "description": "ASD-STE100 (Simplified Technical English) and 80% Karpathy Mode plugin, mod, and skill for Claude Code. Enforces clean, unambiguous technical explanations.",
   "author": {
     "name": "Dreamwalker"
@@ -16,6 +16,7 @@
     "prompt-engineering"
   ],
   "license": "MIT",
+  "types": "./types/index.d.ts",
   "userConfig": {
     "defaultMode": {
       "title": "Default STE Mode",

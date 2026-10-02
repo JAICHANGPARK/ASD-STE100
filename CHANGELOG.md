@@ -3,6 +3,16 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+3] - 2026-10-02
+
+Releases now use the date and a build number. This is build 3 of 2026-10-02 (2026.10.3 was build 2).
+
+### Added
+- **STE pane:** after an answer in ASD-STE100, a pane beside the transcript shows the answer as an STE document: one sentence on each line, procedure steps, WARNING, CAUTION and NOTE blocks, and unapproved words with the approved word. Keys: `v` view, `c` check, `r` rewrite, `x` close. Use `/ste pane [on|off]`.
+
+### Removed
+- **STE sheet** above the prompt and `/ste sheet`. The score and findings are now in the pane's check tab.
+
 ## [2026.10.3] - 2026-10-02
 
 ### Added
@@ -57,6 +67,7 @@ Versions use the release date (`YYYY.M.D`).
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+3]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B3
 [2026.10.3]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.3
 [2026.10.2]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2
 [1.0.0]: https://github.com/JAICHANGPARK/ASD-STE100/commit/064d192

@@ -1,10 +1,9 @@
 /**
- * STE turn sheet: a drawing-sheet style report of the last answer, shown above the prompt.
+ * STE check: the parts of the pane's check tab.
  *
- * Panels follow the ASD-STE100 overview sheet:
- *   A  Summary (score, sentences, words)
- *   B  Sentence lengths against the word limit
- *   C  Findings (unapproved words, passive voice, style)
+ *   - the prose of an answer, without code, tables and links
+ *   - sentence lengths against the word limit
+ *   - findings (unapproved words, passive voice, style)
  */
 
 const RULE_LABELS = {
@@ -40,7 +39,7 @@ export function findingsOf(report) {
     for (const i of s.issues) {
       if (i.permitted || i.type === 'SENTENCE_LENGTH') continue;
       const item = i.word || i.cluster || (i.message.match(/"([^"]+)"/) || [])[1] || i.message;
-      const alt = i.replacement || i.suggestion || '';
+      const alt = i.replacement || i.suggestion || (i.type === 'NOUN_CLUSTER' ? i.message : '');
       const id = `${i.type}:${item.toLowerCase()}`;
       const row = rows.get(id) || { type: i.type, item, alt, severity: i.severity, count: 0 };
       row.count += 1;
@@ -51,26 +50,11 @@ export function findingsOf(report) {
   return [...rows.values()].sort((a, b) => rank[a.severity] - rank[b.severity] || b.count - a.count);
 }
 
-const clip = (text, n) => (text.length > n ? `${text.slice(0, Math.max(0, n - 1))}…` : text);
+export const clip = (text, n) => (text.length > n ? `${text.slice(0, Math.max(0, n - 1))}…` : text);
 const pad = (text, n) => clip(text, n).padEnd(n);
 
-function Panel({ h, Box, Text, letter, title, note, width, children }) {
-  return (
-    <Box flexDirection="column" borderStyle="single" borderColor="gray" width={width} flexGrow={width ? 0 : 1}>
-      <Box flexDirection="row" justifyContent="space-between">
-        <Text>
-          <Text inverse bold>{` ${letter} `}</Text>
-          <Text bold>{` ${title}`}</Text>
-        </Text>
-        {note ? <Text dimColor>{note} </Text> : null}
-      </Box>
-      {children}
-    </Box>
-  );
-}
-
-// Panel B: the longest sentences as bars, with the limit marked
-function lengthRows({ h, Text }, report, limitOf, barWidth) {
+// The longest sentences as bars, with the limit marked
+export function lengthRows({ h, Text }, report, limitOf, barWidth) {
   const longest = [...report.sentences].sort((a, b) => b.wordCount - a.wordCount).slice(0, 4)
     .sort((a, b) => a.index - b.index);
   const scale = Math.max(30, ...longest.map(s => s.wordCount));
@@ -97,15 +81,15 @@ function lengthRows({ h, Text }, report, limitOf, barWidth) {
   });
 }
 
-// Panel C: a dictionary-style table of findings
-function findingRows({ h, Text }, findings, width) {
+// A dictionary-style table of findings
+export function findingRows({ h, Text }, findings, width, limit = 5) {
   if (findings.length === 0) {
     return [<Text key="none" color="green">✓ No unapproved words, passive voice or style issues.</Text>];
   }
   const itemWidth = Math.min(22, Math.max(10, Math.floor(width * 0.32)));
-  const kindWidth = 9;
+  const kindWidth = 12;
   const altWidth = Math.max(8, width - itemWidth - kindWidth - 6);
-  const shown = findings.slice(0, 5);
+  const shown = findings.slice(0, limit);
   const rows = [
     <Text key="head" dimColor>{`  ${pad('Not approved', itemWidth)} ${pad('Rule', kindWidth)} Use instead`}</Text>,
     ...shown.map((f, n) => (
@@ -121,61 +105,4 @@ function findingRows({ h, Text }, findings, width) {
     rows.push(<Text key="more" dimColor>{`  +${findings.length - shown.length} more · /ste check <text> for the full report`}</Text>);
   }
   return rows;
-}
-
-/**
- * Draw the sheet.
- * @param {object} els   - the surface's element table ($.ui.resolve(e)) plus `h`
- * @param {object} sheet - { report, modeLabel, limitOf, onHide }
- * @param {number} columns - cells across the band
- */
-export function drawSheet(els, sheet, columns) {
-  const { h, Box, Text, Button } = els;
-  const { report, modeLabel, limitOf, onHide } = sheet;
-  const findings = findingsOf(report);
-  const isWide = columns >= 110;
-  const leftWidth = isWide ? Math.floor(columns * 0.48) : undefined;
-  const barWidth = Math.max(10, Math.min(40, (isWide ? leftWidth : columns) - 18));
-  const rightInner = isWide ? columns - leftWidth - 4 : columns - 4;
-  const scoreColor = report.score >= 90 ? 'green' : report.score >= 70 ? 'yellow' : 'red';
-  const over = report.sentences.filter(s => s.wordCount > limitOf(s)).length;
-
-  const header = (
-    <Box flexDirection="row" justifyContent="space-between" width={columns}>
-      <Text>
-        <Text inverse bold> A </Text>
-        <Text bold> STE sheet </Text>
-        <Text dimColor>{`· ${modeLabel} · last answer`}</Text>
-      </Text>
-      <Box flexDirection="row">
-        <Text>
-          <Text dimColor>score </Text>
-          <Text bold color={scoreColor}>{`${report.score}/100`}</Text>
-          <Text dimColor>{`  ${report.totalSentences} sentences · ${report.totalWords} words · avg ${report.averageWordsPerSentence} · ${report.totalIssues} issues `}</Text>
-        </Text>
-        <Button key="ste-hide" label="Hide" plain onPress={onHide} />
-      </Box>
-    </Box>
-  );
-
-  const lengths = (
-    <Panel h={h} Box={Box} Text={Text} letter="B" title="Sentence length" note={over ? `${over} over limit` : 'all within limit'} width={leftWidth}>
-      {lengthRows({ h, Text }, report, limitOf, barWidth)}
-    </Panel>
-  );
-  const table = (
-    <Panel h={h} Box={Box} Text={Text} letter="C" title="Findings" note={findings.length ? `${findings.length} items` : 'clean'}>
-      {findingRows({ h, Text }, findings, rightInner)}
-    </Panel>
-  );
-
-  return (
-    <Box flexDirection="column" width={columns}>
-      {header}
-      <Box flexDirection={isWide ? 'row' : 'column'}>
-        {lengths}
-        {table}
-      </Box>
-    </Box>
-  );
 }

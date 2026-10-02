@@ -72,7 +72,7 @@ Type `/` to see the `/ste` command:
 /ste on             # Activate automatic STE prompt enhancement
 /ste 80             # Set to Karpathy's 80% Pragmatic Mode (recommended)
 /ste strict         # Set to 100% Strict ASD-STE100 Mode
-/ste sheet [on|off] # Show or hide the STE sheet after each turn
+/ste pane           # Show the last answer as an STE document in a side pane
 /ste check <text>   # Lint and score a sentence or paragraph
 /ste rewrite <text> # Rewrite any text into clean STE format
 /ste status         # Display active mode and status
@@ -81,15 +81,16 @@ Type `/` to see the `/ste` command:
 
 `/ste on`, `/ste 80`, `/ste strict`, and `/ste off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
 
-### STE sheet
+### STE pane
 
-After each turn, the mod lints the last answer and shows an STE sheet above the prompt:
+Ask Claude to explain something in ASD-STE100, or turn on STE mode with `/ste on`. After the answer, the STE pane opens beside the transcript. The pane shows the answer as an ASD-STE100 document:
 
-- **A**: the score, the number of sentences and words, and the number of issues
-- **B**: the longest sentences as bars against the word limit (20 or 25 words)
-- **C**: the findings, with the approved word to use instead
+- One sentence on each line. A sentence over the word limit shows its word count in red.
+- Numbered lines show as procedure steps.
+- **WARNING**, **CAUTION**, and **NOTE** show as signal blocks.
+- Unapproved words show in red, with the approved word after them (`utilize →USE`).
 
-Code blocks, tables, and links are not linted. Press **Hide** to close the sheet until the next turn. Use `/ste sheet off` to stop it. This setting is saved machine-wide.
+Pane keys: `v` view, `c` check (score and findings), `r` rewrite an answer that is not in STE, `x` close. The pane docks beside the transcript in the fullscreen layout. Use `/ste pane` to open it, and `/ste pane off` to stop it from opening by itself.
 
 The mod also gives Claude two tools: `mcp__asd-ste100__validate_ste` and `mcp__asd-ste100__rewrite_ste`.
 

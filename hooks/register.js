@@ -5,18 +5,27 @@
  * - /ste command (on, off, 80, strict, check, rewrite, status)
  * - Automatic prompt guidance injection when active
  * - UI status indicator & spinner suffix
- * - STE sheet above the prompt after each turn (/ste sheet on|off)
+ * - STE pane: the last answer as an ASD-STE100 document beside the transcript (/ste pane)
  * - Built-in Claude tools: mcp__asd-ste100__validate_ste & mcp__asd-ste100__rewrite_ste
  */
 
+import { atom, read, update } from 'claude-code';
 import { validateText, buildSystemPrompt } from '../lib/ste-engine.js';
-import { drawSheet, proseOf } from './sheet.jsx';
+import { PANE_ID, drawPane } from './pane.jsx';
+import { proseOf } from './sheet.jsx';
+import { STE_REQUEST } from './view.jsx';
 
 let steActive = false;
 let steMode = 'pragmatic'; // 'pragmatic' (80% Karpathy mode) or 'strict' (100% ASD-STE100)
-let sheetEnabled = true; // Show the STE sheet above the prompt after each turn
-let sheetHidden = false; // Hidden with the Hide button until the next turn
-let lastReport = null; // validateText report of the last answer
+let paneAuto = true; // Open the STE pane by itself after an answer in STE
+
+// STE pane values. $.state keeps them across a reload of the module, and a write redraws the pane.
+const view = atom({ plugin: 'asd-ste100', key: 'view' }, null);
+const report = atom({ plugin: 'asd-ste100', key: 'report' }, null);
+const tab = atom({ plugin: 'asd-ste100', key: 'tab' }, 'view');
+const isAsked = atom({ plugin: 'asd-ste100', key: 'isAsked' }, false);
+const isRewriting = atom({ plugin: 'asd-ste100', key: 'isRewriting' }, false);
+const paneOpen = atom({ plugin: 'asd-ste100', key: 'paneOpen' }, false);
 
 // Word limit for one sentence of a report
 const limitOf = (sentence) => (sentence.isProcedural && steMode === 'strict' ? 20 : 25);
@@ -30,6 +39,40 @@ const lengthRule = (mode) => (mode === 'strict'
 // Ask the model for the rewritten text only, without commentary
 const rewritePrompt = (mode, text) =>
   `Rewrite the following text into ${modeName(mode)}. Output only the rewritten text. Do not add headings, explanations, or notes.\n\n${text}`;
+
+// Lint report of an answer, without its code, tables and links
+const reportOf = (text) => {
+  const prose = proseOf(text);
+  const checked = prose ? validateText(prose, { mode: steMode }) : null;
+  return checked && checked.totalSentences > 0 ? checked : null;
+};
+
+async function openPane($) {
+  await update($, paneOpen, () => true);
+  return $.ui.open({ id: PANE_ID, title: 'STE' });
+}
+
+// Rewrite the original answer in STE for the pane
+async function rewriteView($) {
+  const current = await read($, view);
+  if (!current || (await read($, isRewriting))) return;
+  await update($, isRewriting, () => true);
+  const response = await $.model.complete({
+    model: 'haiku',
+    system: buildSystemPrompt({ mode: steMode }),
+    prompt: `${rewritePrompt(steMode, current.original)}\n\nKeep the headings, lists, code blocks and WARNING or CAUTION signals.`,
+    maxTokens: 2000,
+    timeoutMs: 60000
+  });
+  if (response.isAnswered) {
+    const text = response.text.trim();
+    await update($, view, (v) => ({ ...(v ?? current), text, source: 'rewrite' }));
+    await update($, report, () => reportOf(text));
+  } else {
+    $.ui.toast(`STE rewrite failed: ${response.reason}`);
+  }
+  await update($, isRewriting, () => false);
+}
 
 // Show the current state in the status line and redraw the spinner suffix
 function refreshUi($) {
@@ -52,7 +95,7 @@ export function register(on, options = {}) {
       await $.command.register({
         name: 'ste',
         description: 'Control ASD-STE100 writing mode, check text, or rewrite content',
-        argumentHint: '[on|off|80|strict|sheet [on|off]|check <text>|rewrite <text>|status]'
+        argumentHint: '[on|off|80|strict|pane [on|off]|check <text>|rewrite <text>|status]'
       });
 
       await $.tool.register({
@@ -87,8 +130,8 @@ export function register(on, options = {}) {
       if (typeof savedActive === 'boolean') steActive = savedActive;
       const savedMode = await $.store.get('ste_mode');
       if (savedMode === 'strict' || savedMode === 'pragmatic') steMode = savedMode;
-      const savedSheet = await $.store.get('ste_sheet');
-      if (typeof savedSheet === 'boolean') sheetEnabled = savedSheet;
+      const savedPane = await $.store.get('ste_pane');
+      if (typeof savedPane === 'boolean') paneAuto = savedPane;
 
       if (steActive) refreshUi($);
     } catch (err) {
@@ -139,13 +182,15 @@ export function register(on, options = {}) {
       return { text: '[ASD-STE100] Switched to 100% Strict Mode (ASD-STE100 Issue 9): max 20 words for procedures, max 25 for descriptions, approved vocabulary, active voice, no semicolons or contractions.' };
     }
 
-    if (sub === 'sheet') {
+    if (sub === 'pane') {
       const arg = rest.toLowerCase();
-      sheetEnabled = arg === 'on' ? true : arg === 'off' ? false : !sheetEnabled;
-      sheetHidden = false;
-      await $.store.set('ste_sheet', sheetEnabled);
-      $.ui.invalidate('ui.render');
-      return { text: `[ASD-STE100] STE sheet ${sheetEnabled ? 'ON: it shows above the prompt after each turn' : 'OFF'}.` };
+      if (arg === 'on' || arg === 'off') {
+        paneAuto = arg === 'on';
+        await $.store.set('ste_pane', paneAuto);
+        return { text: `[ASD-STE100] The STE pane ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /ste pane'}.` };
+      }
+      await openPane($);
+      return { text: '[ASD-STE100] STE pane opened. v: view · c: check · r: rewrite · x: close' };
     }
 
     if (sub === 'status') {
@@ -153,8 +198,8 @@ export function register(on, options = {}) {
         text: `[ASD-STE100 Status]
 - State: ${steActive ? 'ACTIVE (automatically formatting prompts)' : 'INACTIVE'}
 - Mode: ${modeLabel()}
-- Sheet: ${sheetEnabled ? 'ON' : 'OFF'}
-- Commands: /ste [on|off|80|strict|sheet [on|off]|check <text>|rewrite <text>]`
+- Pane: ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /ste pane'}
+- Commands: /ste [on|off|80|strict|pane [on|off]|check <text>|rewrite <text>]`
       };
     }
 
@@ -204,7 +249,8 @@ Commands:
   /ste off            - Deactivate STE enhancement
   /ste 80             - Set to 80% Pragmatic Mode (Karpathy style, readable & fast)
   /ste strict         - Set to 100% Strict ASD-STE100 standard
-  /ste sheet [on|off] - Show or hide the STE sheet after each turn
+  /ste pane           - Show the last answer as an STE document in a side pane
+  /ste pane [on|off]  - Open the pane by itself after an answer in STE, or not
   /ste check <text>   - Lint text and inspect compliance score
   /ste rewrite <text> - Rewrite text into STE format
   /ste status         - Check current mode and settings`
@@ -234,6 +280,9 @@ Commands:
 
   // Automatically attach STE directive to prompts if active
   on('prompt.submit', async ($, e, next) => {
+    // The answer is in STE when the person asks for it or STE mode is on
+    await update($, isAsked, () => steActive || STE_REQUEST.test(e.text));
+
     if (!steActive) {
       return next(e);
     }
@@ -264,32 +313,36 @@ Commands:
     });
   });
 
-  // Lint the final answer of each main-loop turn for the STE sheet
+  // Keep the final answer of each main-loop turn for the STE pane
   on('turn.complete', async ($, e, next) => {
-    if (!e.agentId && !e.isAborted) {
-      const prose = proseOf(e.answer);
-      const report = prose ? validateText(prose, { mode: steMode }) : null;
-      lastReport = report && report.totalSentences > 0 ? report : null;
-      sheetHidden = false;
-      $.ui.invalidate('ui.render');
+    if (!e.agentId && !e.isAborted && e.answer.trim()) {
+      const asked = await read($, isAsked);
+      await update($, view, () => ({ text: e.answer, original: e.answer, source: 'answer', isAsked: asked }));
+      await update($, report, () => reportOf(e.answer));
+      await update($, tab, () => 'view');
+      if (asked && paneAuto && !(await read($, paneOpen))) void openPane($);
     }
     return next(e);
   });
 
-  // Draw the STE sheet above the prompt
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (!sheetEnabled || sheetHidden || !lastReport || e.props.hasSurvey || e.props.isWorking) {
-      return next(e);
-    }
-    const els = { h, ...$.ui.resolve(e) };
-    return drawSheet(els, {
-      report: lastReport,
+  on('ui.close', async ($, e, next) => {
+    if (e.id === PANE_ID) await update($, paneOpen, () => false);
+    return next(e);
+  });
+
+  // Draw the STE pane
+  on('ui.render', { component: 'Pane', requestId: 'ste-sheet' }, async ($, e) => {
+    return drawPane({ h, ...$.ui.resolve(e) }, {
+      view: await read($, view),
+      report: await read($, report),
+      tab: await read($, tab),
+      mode: steMode,
       modeLabel: modeLabel(),
       limitOf,
-      onHide: () => {
-        sheetHidden = true;
-        $.ui.invalidate('ui.render');
-      }
+      isRewriting: await read($, isRewriting),
+      onTab: (id) => update($, tab, () => id),
+      onRewrite: () => rewriteView($),
+      onClose: () => $.ui.close({ id: PANE_ID })
     }, e.props.bodyColumns);
   });
 }
