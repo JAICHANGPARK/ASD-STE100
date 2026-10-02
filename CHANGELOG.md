@@ -3,7 +3,7 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
-## [Unreleased]
+## [2026.10.3] - 2026-10-02
 
 ### Added
 - **STE sheet:** after each turn, the mod shows the score, sentence lengths and findings of the last answer above the prompt. Use `/ste sheet [on|off]` to control it.
@@ -57,5 +57,6 @@ Versions use the release date (`YYYY.M.D`).
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.3]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.3
 [2026.10.2]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2
 [1.0.0]: https://github.com/JAICHANGPARK/ASD-STE100/commit/064d192
