@@ -126,7 +126,7 @@ export function register(on, options = {}) {
       await $.store.set('ste_mode', 'strict');
       await $.store.set('ste_active', true);
       refreshUi($);
-      return { text: '[ASD-STE100] Switched to 100% Strict Mode (Full ASD-STE100 Issue 8): max 20 words for procedural, max 25 for descriptive, strict approved vocabulary tables, zero passive voice.' };
+      return { text: '[ASD-STE100] Switched to 100% Strict Mode (ASD-STE100 Issue 9): max 20 words for procedures, max 25 for descriptions, approved vocabulary, active voice, no semicolons or contractions.' };
     }
 
     if (sub === 'status') {

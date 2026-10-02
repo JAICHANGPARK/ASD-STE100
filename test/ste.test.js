@@ -79,4 +79,24 @@ const twentySix = Array.from({ length: 26 }, () => 'word').join(' ') + '.';
 assert(validateText(twentySix).sentences[0].issues.some(i => i.type === 'SENTENCE_LENGTH'));
 console.log('✔ Pragmatic 25-word cap passed');
 
+// Test 13: Passive voice is permitted in descriptive text only when the agent is unknown (STE 3.6)
+const unknownAgent = validateText('The packets are encrypted.', { mode: 'strict' });
+assert.strictEqual(unknownAgent.score, 100);
+assert(unknownAgent.sentences[0].issues.some(i => i.type === 'PASSIVE_VOICE' && i.permitted));
+const knownAgent = validateText('The packets are encrypted by the proxy.', { mode: 'strict' });
+assert(knownAgent.sentences[0].issues.some(i => i.type === 'PASSIVE_VOICE' && i.severity === 'error'));
+console.log('✔ Passive voice exception passed');
+
+// Test 14: Semicolons, contractions, Latin abbreviations and phrasal verbs
+const typesOf = (text, mode) => validateText(text, { mode }).sentences.flatMap(x => x.issues.map(i => i.type));
+assert.deepStrictEqual(typesOf("Set up the server; then don't stop it, e.g. now.", 'strict').sort(),
+  ['CONTRACTION', 'LATIN_ABBREVIATION', 'PHRASAL_VERB', 'SEMICOLON']);
+assert(!typesOf("Don't stop it, e.g. now.", 'pragmatic').includes('CONTRACTION'));
+console.log('✔ Punctuation and style checks passed');
+
+// Test 15: Paragraphs have a maximum of 6 sentences
+assert(typesOf('A one. B two. C three. D four. E five. F six. G seven.', 'strict').includes('PARAGRAPH_LENGTH'));
+assert(!typesOf('A one. B two. C three.\n\nD four. E five. F six. G seven.', 'strict').includes('PARAGRAPH_LENGTH'));
+console.log('✔ Paragraph length check passed');
+
 console.log('\nAll tests passed successfully!');

@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Plugin%20%26%20Mod-orange.svg)](https://code.claude.com)
-[![Specification](https://img.shields.io/badge/Spec-ASD--STE100%20Issue%208-green.svg)](http://www.asd-ste100.org/)
+[![Specification](https://img.shields.io/badge/Standard-ASD--STE100%20Issue%209-green.svg)](https://www.asd-ste100.org/)
 
 ---
 
@@ -26,7 +26,7 @@ This repository packages **ASD-STE100** into a complete ecosystem:
 1. **Claude Code Mod (`hooks/register.js`)**: An internal Claude Code extension that adds `/ste` commands, UI status indicators, and automatic prompt rewriting.
 2. **Claude Code Plugin (`.claude-plugin/plugin.json`)**: Installable plugin compliant with the new Claude Code plugin architecture.
 3. **Agent Skill (`skills/asd-ste100/SKILL.md`)**: A rich skill loaded by Claude Code, Google Antigravity, and other coding assistants.
-4. **Core Rule Engine & Linter (`lib/ste-engine.js`)**: Checks sentence length, passive voice, verb tenses, noun clusters, and unapproved vocabulary with lightweight heuristics (no part-of-speech tagging).
+4. **Core Rule Engine & Linter (`lib/ste-engine.js`)**: Checks sentence and paragraph length, passive voice (with the Issue 9 descriptive-text exception), verb forms, multi-word nouns, unapproved words, phrasal verbs, semicolons, contractions, and Latin abbreviations. It uses lightweight heuristics (no part-of-speech tagging) and a curated word list, not the official ~900-word dictionary.
 5. **Standalone CLI (`bin/ste.js`)**: Lint text files or format system prompts directly from your terminal.
 
 ---
@@ -128,14 +128,19 @@ Whenever you want an agent to explain or rewrite technical logic, simply ask:
 
 ## ⚖️ Strict 100% vs. Karpathy 80% Pragmatic Mode
 
+Strict mode follows **ASD-STE100 Issue 9** (January 2025): 53 writing rules in 9 sections and a dictionary of about 900 approved words. The official standard is free on request at [asd-ste100.org](https://www.asd-ste100.org/). This repository summarizes the rules and does not include the dictionary.
+
 | Rule Dimension | Strict Mode (100% ASD-STE100) | 80% Pragmatic Mode (Karpathy) [Default] |
 | :--- | :--- | :--- |
 | **Primary Use Case** | Aerospace, defense, ISO hardware manuals | Software engineering, AI systems, architecture review |
 | **Sentence Length** | Instructions: ≤ 20 words<br>Descriptions: ≤ 25 words | Target 15–22 words (hard cap at 25 words) |
-| **Voice** | Strict active voice only. Imperative for steps. | Active voice with direct subject-verb-object clarity |
-| **Vocabulary** | Strictly approved ASD-STE100 dictionary words only | Replaces bureaucratic jargon with simple verbs (*use*, *start*, *stop*, *before*), but allows modern tech nouns (*API*, *cache*, *Docker*) |
+| **Voice** | Active voice. Passive only in descriptive text when the agent is unknown. Imperative for steps. | Active voice with direct subject-verb-object clarity |
+| **Vocabulary** | Approved ASD-STE100 dictionary words, plus technical nouns and technical verbs | Replaces bureaucratic jargon with simple verbs (*use*, *start*, *stop*, *before*), but allows modern tech nouns (*API*, *cache*, *Docker*) |
 | **Noun Clusters** | Max 3 consecutive nouns | Max 3 consecutive nouns (separated by prepositions) |
-| **Modal Verbs** | Banned: *shall*, *should*, *could*, *might* | Direct directives (*must*, *can*, or specific conditional rules) |
+| **Modal Verbs** | Replace *shall*, *should*, *could*, *might* with *must*, *can*, or an exact condition | Direct directives (*must*, *can*, or specific conditional rules) |
+| **Punctuation** | No semicolons, contractions, or Latin abbreviations (*e.g.*, *i.e.*, *etc.*) | Avoid semicolons |
+| **Paragraphs** | One topic, max 6 sentences | One topic, max 6 sentences |
+| **Safety** | **WARNING** / **CAUTION**, a command first, then the risk | Same, for data loss, security risks, and outages |
 | **Cognitive Modality** | Standard technical text and tables | Pairs text with **Mermaid diagrams** or **Interactive HTML** |
 
 ---
@@ -187,6 +192,12 @@ Run the automated test suite:
 ```bash
 npm test
 ```
+
+---
+
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
