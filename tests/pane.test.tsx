@@ -156,7 +156,9 @@ test('code blocks and tables draw as markdown, and model numbers are not doubled
     const ui = await $.ui.mount({ plugin: 'asd-ste100', surface, ...pane(72) })
     expect(await ui.find({ type: 'Text', text: /^1\. STATEFULWIDGET$/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /1\. 2\./ })).toBeUndefined()
-    expect(await ui.findAll({ type: 'Markdown' })).toHaveLength(2)
+    expect(await ui.findAll({ type: 'Markdown' })).toHaveLength(1)
+    expect(await ui.find({ type: 'Text', text: /│ Category +│ Examples +│/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /│ Layout +│ Row, Column +│/ })).toBeDefined()
     await ui.unmount()
   }
 })

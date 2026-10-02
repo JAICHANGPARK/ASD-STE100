@@ -95,9 +95,76 @@ export function blocksOf(answer) {
   return blocks;
 }
 
-// A code block or a table, drawn as markdown the way an assistant reply draws it
-function markdownBlock(els, key, b) {
+// Words of `text` in lines of at most `width` cells; a longer word is cut
+function wrapCell(text, width) {
+  const lines = [];
+  let line = '';
+  for (let word of text.split(/\s+/).filter(Boolean)) {
+    while (word.length > width) {
+      if (line) { lines.push(line); line = ''; }
+      lines.push(word.slice(0, width));
+      word = word.slice(width);
+    }
+    if (!line) line = word;
+    else if (line.length + 1 + word.length <= width) line += ' ' + word;
+    else { lines.push(line); line = word; }
+  }
+  if (line || lines.length === 0) lines.push(line);
+  return lines;
+}
+
+// Column widths that fit `room` cells: a narrow column keeps its width, a wide one shares the rest
+function fitColumns(natural, room) {
+  const widths = natural.map(() => 0);
+  let left = room;
+  let open = natural.map((_, i) => i);
+  while (open.length) {
+    const share = Math.floor(left / open.length);
+    const small = open.filter(i => natural[i] <= share);
+    if (small.length === 0) {
+      open.forEach((i, n) => { widths[i] = Math.max(3, share + (n < left - share * open.length ? 1 : 0)); });
+      break;
+    }
+    for (const i of small) { widths[i] = natural[i]; left -= natural[i]; }
+    open = open.filter(i => !small.includes(i));
+  }
+  return widths;
+}
+
+// A markdown table drawn as a text grid that fits `width` cells, with wrapped cells and a bold header
+function tableRows(els, key, lines, width) {
+  const { h, Text } = els;
+  const rows = lines
+    .filter(line => !/^\s*\|?[\s:|-]+\|?\s*$/.test(line))
+    .map(line => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => plain(c.trim())));
+  const n = Math.max(...rows.map(r => r.length));
+  rows.forEach(r => { while (r.length < n) r.push(''); });
+  const natural = Array.from({ length: n }, (_, i) => Math.max(3, ...rows.map(r => r[i].length)));
+  const widths = fitColumns(natural, Math.max(n * 3, width - (n + 1) - 2 * n));
+  const line = (k, [l, c, r]) => <Text key={k} dimColor>{l + widths.map(w => '─'.repeat(w + 2)).join(c) + r}</Text>;
+  const out = [line(`${key}-top`, ['┌', '┬', '┐'])];
+  rows.forEach((row, ri) => {
+    const cells = row.map((c, i) => wrapCell(c, widths[i]));
+    const height = Math.max(...cells.map(c => c.length));
+    for (let li = 0; li < height; li++) {
+      const parts = [<Text key="b0" dimColor>│</Text>];
+      cells.forEach((c, i) => {
+        const text = (c[li] || '').padEnd(widths[i]);
+        parts.push(<Text key={`c${i}`} bold={ri === 0} color={ri === 0 ? 'cyan' : undefined}>{` ${text} `}</Text>);
+        parts.push(<Text key={`b${i + 1}`} dimColor>│</Text>);
+      });
+      out.push(<Text key={`${key}-${ri}-${li}`} wrap="truncate-end">{parts}</Text>);
+    }
+    if (ri < rows.length - 1) out.push(line(`${key}-sep${ri}`, ri === 0 ? ['╞', '╪', '╡'] : ['├', '┼', '┤']));
+  });
+  out.push(line(`${key}-bottom`, ['└', '┴', '┘']));
+  return out;
+}
+
+// A code block drawn as markdown the way an assistant reply draws it; a table as a text grid
+function markdownBlock(els, key, b, width = 80) {
   const { h, Text, Markdown } = els;
+  if (b.kind === 'table') return tableRows(els, key, b.lines, width);
   const text = b.kind === 'code'
     ? ['```' + (b.lang || ''), ...b.lines, '```'].join('\n')
     : b.lines.join('\n');
@@ -177,7 +244,7 @@ export function viewRows(els, text, { mode, limitOf, columns }) {
       continue;
     }
     if (b.kind === 'code' || b.kind === 'table') {
-      rows.push(...markdownBlock(els, key(), b));
+      rows.push(...markdownBlock(els, key(), b, columns));
       continue;
     }
     // Descriptive text: one sentence on each line, then a gap after the paragraph
@@ -272,7 +339,7 @@ export function manualRows(els, text, { mode, limitOf, columns }) {
       continue;
     }
     if (b.kind === 'code' || b.kind === 'table') {
-      rows.push(<Box key={key()} flexDirection="column" paddingLeft={3}>{markdownBlock(els, key(), b)}</Box>);
+      rows.push(<Box key={key()} flexDirection="column" paddingLeft={3}>{markdownBlock(els, key(), b, columns - 3)}</Box>);
       continue;
     }
     item = 0;

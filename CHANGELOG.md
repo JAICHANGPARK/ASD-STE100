@@ -3,6 +3,12 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+17] - 2026-10-02
+
+### Fixed
+- **Tables in the STE pane fit the pane.** The Markdown element sizes a table to the whole terminal, so a table broke in the narrow pane. The pane now draws a table as a text grid at its own width: a bold header, and long cells wrapped inside their column. Code blocks still draw as markdown.
+- The footer no longer cuts the standard name.
+
 ## [2026.10.2+16] - 2026-10-02
 
 ### Fixed
@@ -140,6 +146,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+17]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B17
 [2026.10.2+16]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B16
 [2026.10.2+15]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B15
 [2026.10.2+14]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B14

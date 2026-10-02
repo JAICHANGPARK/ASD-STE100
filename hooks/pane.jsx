@@ -164,7 +164,7 @@ export function drawPane(els, pane, columns) {
   if (isFramed) {
     const top = splitWidths(inner, [3, 1]);
     const cells = splitWidths(inner, [3, 2, 1, 2]);
-    const foot = splitWidths(inner, [2, 2, 3]);
+    const foot = splitWidths(inner, [3, 2, 3]);
     header = [
       gridLine(els, 'h0', top, ['┌', '┬', '┐']),
       gridRow(els, 'h1', [['', 'ASD-STE100  STE MAINTENANCE MANUAL', { bold: true }], ['TASK', taskNo, { bold: true }]], top),
@@ -177,7 +177,7 @@ export function drawPane(els, pane, columns) {
     ];
     footer = [
       gridLine(els, 'f0', foot, ['┌', '┬', '┐']),
-      gridRow(els, 'f1', [['', 'ASD-STE100 ISSUE 9'], ['SCORE', score, report ? { color: scoreColor(report.score), bold: true } : {}], ['', `${taskNo}  PAGE ${block[0]}`]], foot),
+      gridRow(els, 'f1', [['', 'STE100 ISSUE 9'], ['SCORE', score, report ? { color: scoreColor(report.score), bold: true } : {}], ['', `${taskNo}  PAGE ${block[0]}`]], foot),
       gridLine(els, 'f2', foot, ['└', '┴', '┘']),
     ];
   } else {
