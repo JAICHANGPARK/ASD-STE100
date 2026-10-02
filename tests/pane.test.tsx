@@ -95,7 +95,7 @@ test('the pane opens after a plain question', async ($, on) => {
   expect(opened).toContain('ste-sheet')
 })
 
-test('STE mode adds its rules to the system prompt and keeps the prompt as typed', async ($, on) => {
+test('STE mode adds its rules to the system prompt and keeps the prompt as typed', { options: { autoInject: true } }, async ($, on) => {
   let seen = ''
   on('prompt.submit', (_$: unknown, e: any) => {
     seen = e.text
@@ -118,4 +118,10 @@ test('an answer with the word "constructor" draws', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: /could not draw/ })).toBeUndefined()
   expect(await ui.find({ type: 'Text', text: /constructor parameters/ })).toBeDefined()
   await ui.unmount()
+})
+
+test('by default the answer stays as Claude wrote it', async ($, on) => {
+  on('prompt.compose', () => ({ sections: [{ id: 'intro', text: 'You are Claude Code.', scope: 'shared' }] }) as never)
+  const composed = await ($.prompt as any).compose({ model: 'claude-opus-5-5', promptModel: 'claude-opus-5-5', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] })
+  expect(composed.sections.map((s: any) => s.id)).not.toContain('asd-ste100:directive')
 })
