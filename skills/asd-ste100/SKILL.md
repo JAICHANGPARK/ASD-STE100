@@ -20,6 +20,7 @@ Activate this skill when:
 - Complex architecture, code, algorithms, or system workflows must be parsed rapidly without ambiguity.
 - You need to audit or lint existing documentation for passive voice, bloated sentences, or ambiguous words.
 - The user wants multi-modal cognitive aids alongside STE (e.g., Mermaid diagrams, interactive HTML explainers, or 3b1b/Manim video scripts).
+- The user asks to **summarize or record a session, a conversation or a meeting** in STE (see "Session records" below).
 
 ---
 
@@ -163,6 +164,8 @@ Generate complete 3b1b (3Blue1Brown / Manim) animation scripts with voice narrat
 
 When requested to explain or rewrite a topic:
 1. **Determine Mode:** Default to **80% Pragmatic Mode** unless the user specifies "100%", "strict", or aerospace compliance.
+   - **Language:** Write in the language of the user's request. ASD-STE100 is an English standard, but apply its principles to the user's language: short sentences, one idea in each sentence, the active voice, simple and literal words. A Korean request gets a Korean STE answer.
+   - **Document structure:** Start with `# <title>`. Give each topic a `## <heading>` (do not number the headings yourself). Write procedures as numbered steps with one command in each step. Write risks as `WARNING:` or `CAUTION:` lines. Keep code blocks and technical names unchanged.
 2. **Deconstruct the Core Concepts:** Identify the actors, actions, and sequence.
 3. **Draft Sentences:** Keep each sentence under 22 words. Use active voice.
 4. **Vocabulary Audit:** Check against unapproved words (*utilize* -> *use*, *prior to* -> *before*, *etc.* -> list explicitly) and phrasal verbs (*set up* -> *install*).
@@ -176,3 +179,16 @@ When requested to explain or rewrite a topic:
    - [ ] No fluff words (*it should be noted that*, *in order to*).
    - [ ] No semicolons (strict: also no contractions and no *e.g.*, *i.e.*, *etc.*).
    - [ ] Safety risks use **WARNING** or **CAUTION**, a command first, then the risk.
+
+### Session records
+
+When the user asks to summarize or record a session, a conversation or a meeting, write an STE record with these sections. Leave out a section that has no content.
+
+- `## Purpose`: what the user wanted.
+- `## Decisions`: what was decided, and why.
+- `## Completed work`: what was done, as numbered steps in time order.
+- `## Open items`: what is not done, as a list.
+
+Write only facts from the conversation. Do not add new facts. Write risks as `WARNING:` or `CAUTION:` lines.
+
+The `/asd` mod does the same on request: `/asd session` writes the record of the current Claude Code session in the STE pane (`/asd session lite` uses a small model). The mod never runs it by itself, as it uses tokens.

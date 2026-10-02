@@ -37,7 +37,7 @@ This repository packages **ASD-STE100** into a complete ecosystem:
 
 **Requirements:** Claude Code **v2.1.287 or later** for the mod (`/asd` command, tools, STE pane, system prompt rules, spinner indicator). Run `claude --version` to check. The skill works on any version that supports plugins.
 
-This repository is its own plugin marketplace. Install it from GitHub:
+This repository is its own plugin marketplace. One plugin install gives you both the **skill** and the **mod** (the `/asd` command and the STE pane). Install it from GitHub:
 
 ```bash
 claude plugin marketplace add JAICHANGPARK/ASD-STE100
@@ -74,6 +74,7 @@ Type `/` to see the `/asd` command:
 /asd strict         # Use 100% Strict ASD-STE100 Mode; changes only the mode
 /asd pane           # Show the last answer as an STE document in a side pane
 /asd auto [on|off]  # Rewrite each answer as an STE document in the pane (default on)
+/asd session [lite] # Write an STE record of the whole session in the pane (on request only)
 /asd check <text>   # Lint and score a sentence or paragraph
 /asd rewrite <text> # Rewrite any text into clean STE format
 /asd status         # Display active mode and status
@@ -83,6 +84,14 @@ Type `/` to see the `/asd` command:
 The mod keeps Claude's answer as Claude wrote it. After each answer, the STE pane opens and shows that answer converted into an ASD-STE100 document. You do not need `/asd on` for the pane. Use `/asd on` only when you want Claude to write the answer itself in STE (the same effect as the skill). Use `/asd off` to go back.
 
 `/asd 80` and `/asd strict` change only the mode that the pane and STE mode use. Only `/asd on` makes the answer itself STE. `/asd on`, `/asd 80`, `/asd strict`, and `/asd off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
+
+### STE session record
+
+`/asd session` writes a record of the whole Claude Code session as an ASD-STE100 document, in the STE pane (key `s`). The record has the sections **Purpose**, **Decisions**, **Completed work** (numbered steps in time order), and **Open items**, in the language of the conversation.
+
+- `/asd session` asks the session's own model once, over the conversation that it already has in its prompt cache. This gives the most accurate record.
+- `/asd session lite` sends the conversation text to a small model (haiku). It costs less. The mod also uses it when the full way fails.
+- The record uses tokens, so the mod makes it only when you ask: with `/asd session`, or with `g` on the pane's session tab. It never runs by itself.
 
 ### STE pane
 

@@ -177,3 +177,55 @@ test('a pane that waits on a narrow terminal says how to open it', async ($, on)
   await $.turn.complete({ answer: 'An index makes a search fast.', durationMs: 10, isAborted: false, turnId: 't', reason: 'answer' })
   expect(toasts.join(' ')).toContain('/asd pane')
 })
+
+const RECORD = [
+  '# STE Mod Work',
+  '',
+  '## Purpose',
+  '',
+  'The person wanted an STE pane.',
+  '',
+  '## Completed work',
+  '',
+  '1. Release 2026.10.2+18.',
+].join(String.fromCharCode(10))
+
+test('the session record runs only on request, from the full context', async ($, on) => {
+  const forks: string[] = []
+  const { turn } = setup(on, $)
+  on('model.fork', (_$: unknown, e: any) => {
+    forks.push(e.prompt)
+    return { value: { isAnswered: true, text: RECORD, usage } } as never
+  })
+  await turn('Explain the pane', 'The pane shows the answer.')
+  const ui = await $.ui.mount({ plugin: 'asd-ste100', surface: 'terminal', ...pane(72) })
+  await ui.press({ key: 'tab-session' })
+  expect(await ui.find({ type: 'Text', text: /No session record yet/ })).toBeDefined()
+  expect(forks).toHaveLength(0)
+
+  await ui.press({ key: 'record' })
+  expect(forks).toHaveLength(1)
+  expect(forks[0]).toContain('record of this whole conversation')
+  expect(await ui.find({ type: 'Text', text: /Session record/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /STE MOD WORK/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /00-02-01/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^1\. PURPOSE$/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the session record falls back to the transcript and a small model', async ($, on) => {
+  const { turn, prompts } = setup(on, $, RECORD)
+  on('model.fork', () => ({ value: { isAnswered: false, reason: 'api-error', status: 500, error: 'api_error', usage } }) as never)
+  on('session.messages', () => ({ value: [
+    { role: 'user', text: 'Make an STE pane.', toolUses: [] },
+    { role: 'assistant', text: 'I made the STE pane.', toolUses: [] },
+  ] }) as never)
+  await turn('Explain the pane', 'The pane shows the answer.')
+  const ui = await $.ui.mount({ plugin: 'asd-ste100', surface: 'terminal', ...pane(72) })
+  await ui.press({ key: 'tab-session' })
+  await ui.press({ key: 'record' })
+  const last = prompts[prompts.length - 1]
+  expect(last).toContain('PERSON: Make an STE pane.')
+  expect(await ui.find({ type: 'Text', text: /lite \(small model\)/ })).toBeDefined()
+  await ui.unmount()
+})

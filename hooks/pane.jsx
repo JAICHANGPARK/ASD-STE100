@@ -5,6 +5,7 @@
  *   o  original  the answer as Claude wrote it
  *   c  check     the score and the findings of the text in view
  *   r  rewrite   rewrite the answer again
+ *   s  session   the STE record of the whole session; g makes it (on request only, as it uses tokens)
  *   x  close
  */
 
@@ -121,7 +122,7 @@ function splitWidths(total, shares) {
  */
 export function drawPane(els, pane, columns) {
   const { h, Box, Text, Button } = els;
-  const { view, report, tab, mode, modeLabel, limitOf, isRewriting, onTab, onRewrite, onClose } = pane;
+  const { view, report, tab, mode, modeLabel, limitOf, isRewriting, record, recordReport, isRecording, onTab, onRewrite, onRecord, onClose } = pane;
   const width = Math.max(20, columns);
   const isFramed = width >= 50;
   const inner = width;
@@ -131,7 +132,17 @@ export function drawPane(els, pane, columns) {
   let status;
   let body = [];
   let info = [];
-  if (!view) {
+  const isSession = tab === 'session';
+  if (isSession) {
+    if (isRecording) {
+      status = <Text color="yellow">Writing the STE record of this session…</Text>;
+    } else if (record) {
+      status = <Text><Text color="green">Session record</Text><Text dimColor>{record.source === 'lite' ? ' · lite (small model)' : ' · full context'} · g: write again</Text></Text>;
+    } else {
+      status = <Text dimColor>No session record yet. Press g or type /asd session to write one. This uses tokens.</Text>;
+    }
+    if (record) body = manualRows(els, record.text, { mode, limitOf, columns: bodyWidth });
+  } else if (!view) {
     status = <Text dimColor>The pane shows the next answer as an ASD-STE100 document.</Text>;
   } else if (tab === 'original') {
     status = <Text dimColor>Original answer, as Claude wrote it</Text>;
@@ -151,13 +162,18 @@ export function drawPane(els, pane, columns) {
     }
   }
 
-  const taskNo = `00-01-${String((view && view.task) || 0).padStart(2, '0')}`;
-  const title = ((view && titleOf(view.text)) || 'Last answer').toUpperCase();
+  // The page shows the session record on the session tab, else the last answer
+  const doc = isSession
+    ? { text: record ? record.text : '', task: `00-02-${String((record && record.rev) || 0).padStart(2, '0')}`, rev: record ? record.rev : 0, date: record && record.date, report: recordReport, fallback: 'Session record' }
+    : { text: view ? view.text : '', task: `00-01-${String((view && view.task) || 0).padStart(2, '0')}`, rev: view ? view.rev || 0 : 0, date: view && view.date, report, fallback: 'Last answer' };
+  const taskNo = doc.task;
+  const title = (titleOf(doc.text) || doc.fallback).toUpperCase();
   // AMM page blocks: 001 description and operation, 201 maintenance practices (a text with steps)
-  const hasSteps = !!view && blocksOf(view.text).some(b => b.kind === 'step');
+  const hasSteps = blocksOf(doc.text).some(b => b.kind === 'step');
   const block = hasSteps ? ['201', 'MAINTENANCE PRACTICES'] : ['001', 'DESCRIPTION & OPERATION'];
-  const rev = String(view ? view.rev || 0 : 0);
-  const score = report ? `${report.score}/100` : '—';
+  const rev = String(doc.rev);
+  const pageReport = doc.report;
+  const score = pageReport ? `${pageReport.score}/100` : '—';
 
   let header;
   let footer;
@@ -172,12 +188,12 @@ export function drawPane(els, pane, columns) {
       gridLine(els, 'h3', top, ['├', '┴', '┤']),
       gridRow(els, 'h4', [['', block[1]]], [inner - 2]),
       gridLine(els, 'h5', cells, ['├', '┬', '┤']),
-      gridRow(els, 'h6', [['EFFECTIVITY', 'ALL'], ['MODE', /STRICT/.test(modeLabel) ? 'STRICT 100%' : '80% STE'], ['REV', rev, { bold: true }], ['DATE', (view && view.date) || '—']], cells),
+      gridRow(els, 'h6', [['EFFECTIVITY', 'ALL'], ['MODE', /STRICT/.test(modeLabel) ? 'STRICT 100%' : '80% STE'], ['REV', rev, { bold: true }], ['DATE', doc.date || '—']], cells),
       gridLine(els, 'h7', cells, ['└', '┴', '┘']),
     ];
     footer = [
       gridLine(els, 'f0', foot, ['┌', '┬', '┐']),
-      gridRow(els, 'f1', [['', 'STE100 ISSUE 9'], ['SCORE', score, report ? { color: scoreColor(report.score), bold: true } : {}], ['', `${taskNo}  PAGE ${block[0]}`]], foot),
+      gridRow(els, 'f1', [['', 'STE100 ISSUE 9'], ['SCORE', score, pageReport ? { color: scoreColor(pageReport.score), bold: true } : {}], ['', `${taskNo}  PAGE ${block[0]}`]], foot),
       gridLine(els, 'f2', foot, ['└', '┴', '┘']),
     ];
   } else {
@@ -208,7 +224,10 @@ export function drawPane(els, pane, columns) {
         <Button key="tab-view" plain hotkey="v" label="view" dimColor={tab !== 'view'} onPress={() => onTab('view')} />
         <Button key="tab-original" plain hotkey="o" label="original" dimColor={tab !== 'original'} onPress={() => onTab('original')} />
         <Button key="tab-check" plain hotkey="c" label="check" dimColor={tab !== 'check'} onPress={() => onTab('check')} />
-        <Button key="rewrite" plain hotkey="r" label="rewrite" dimColor={!view || isRewriting} onPress={onRewrite} />
+        <Button key="tab-session" plain hotkey="s" label="session" dimColor={tab !== 'session'} onPress={() => onTab('session')} />
+        {isSession
+          ? <Button key="record" plain hotkey="g" label={record ? 'write again' : 'write record'} dimColor={isRecording} onPress={onRecord} />
+          : <Button key="rewrite" plain hotkey="r" label="rewrite" dimColor={!view || isRewriting} onPress={onRewrite} />}
         <Button key="close" plain hotkey="x" label="close" role="dismiss" onPress={onClose} />
       </Box>
     </Box>

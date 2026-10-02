@@ -3,6 +3,12 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+19] - 2026-10-02
+
+### Added
+- **STE session record:** `/asd session` writes a record of the whole session as an ASD-STE100 document in the STE pane (new key `s`, and `g` to write it). Sections: Purpose, Decisions, Completed work, Open items, in the language of the conversation. It forks the session's own model over the cached conversation; `/asd session lite`, and the fallback, send the transcript to a small model. It runs only on request.
+- **Skill:** the skill now writes in the user's language, uses the same document structure as the pane, and describes session records.
+
 ## [2026.10.2+18] - 2026-10-02
 
 ### Fixed
@@ -151,6 +157,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+19]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B19
 [2026.10.2+18]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B18
 [2026.10.2+17]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B17
 [2026.10.2+16]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B16

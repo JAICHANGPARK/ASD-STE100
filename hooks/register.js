@@ -27,6 +27,9 @@ const tab = atom({ plugin: 'asd-ste100', key: 'tab' }, 'view');
 const isAsked = atom({ plugin: 'asd-ste100', key: 'isAsked' }, false);
 const isRewriting = atom({ plugin: 'asd-ste100', key: 'isRewriting' }, false);
 const paneOpen = atom({ plugin: 'asd-ste100', key: 'paneOpen' }, false);
+const record = atom({ plugin: 'asd-ste100', key: 'record' }, null);
+const recordReport = atom({ plugin: 'asd-ste100', key: 'recordReport' }, null);
+const isRecording = atom({ plugin: 'asd-ste100', key: 'isRecording' }, false);
 
 // Word limit for one sentence of a report
 const limitOf = (sentence) => (sentence.isProcedural && steMode === 'strict' ? 20 : 25);
@@ -55,6 +58,68 @@ Write in the language of the person's prompt, and apply these rules to that lang
 These rules apply even when the prompt asks for another form, for example "one long paragraph" or "a detailed essay". Give the same detail, but in this structure. The rules apply to your prose only, not to code, commands or file contents that you write with tools.`;
 
 // Ask the model for the answer as an ASD-STE100 document, for the pane
+// Ask for a record of the whole session as an ASD-STE100 document
+const recordPrompt = (mode) => `Write a record of this whole conversation as an ASD-STE100 document in ${modeName(mode)}.
+Write the record in the language that the person used in the conversation, and apply the ASD-STE100 rules to that language.
+Use these sections, and leave out a section that has no content:
+- "## Purpose": what the person wanted.
+- "## Decisions": what the person and the assistant decided, and why.
+- "## Completed work": what the assistant did, as numbered steps in time order.
+- "## Open items": what is not done, as a list.
+Write risks as "WARNING:" or "CAUTION:" lines.
+Follow these rules:
+${documentRules(mode)}
+Write only facts from the conversation. Do not add new facts. Output only the document.`;
+
+const MAX_TRANSCRIPT = 150000;
+
+// The session as plain text, cut from the start when it is too long
+async function transcriptOf($) {
+  const rows = await $.session.messages();
+  const text = rows
+    .filter(m => m.text && m.text.trim())
+    .map(m => `${m.role === 'user' ? 'PERSON' : 'ASSISTANT'}: ${m.text.trim()}`)
+    .join('\n\n');
+  return text.length > MAX_TRANSCRIPT ? `[earlier part of the conversation left out]\n${text.slice(-MAX_TRANSCRIPT)}` : text;
+}
+
+// Make the session record. It runs only when the person asks (/asd session, or g in the pane), as it uses tokens.
+// The full way forks the main model over the cached conversation; lite sends the transcript to a small model.
+async function makeRecord($, lite = false) {
+  if (await read($, isRecording)) return;
+  await update($, isRecording, () => true);
+  await update($, tab, () => 'session');
+  let response = null;
+  let source = lite ? 'lite' : 'fork';
+  if (!lite) {
+    response = await $.model.fork({ prompt: recordPrompt(steMode) });
+    if (!response.isAnswered && response.reason !== 'aborted') source = 'lite';
+  }
+  if (source === 'lite') {
+    const transcript = await transcriptOf($);
+    response = transcript
+      ? await $.model.complete({
+        model: 'haiku',
+        system: buildSystemPrompt({ mode: steMode }),
+        prompt: `${recordPrompt(steMode)}\n\nThe conversation:\n\n${transcript}`,
+        maxTokens: 4000,
+        timeoutMs: 120000
+      })
+      : { isAnswered: false, reason: 'nothing-to-fork' };
+  }
+  if (response.isAnswered) {
+    const text = response.text.trim();
+    const date = new Date(await $.clock.now()).toISOString().slice(0, 10);
+    await update($, record, (r) => ({ text, source, date, rev: ((r && r.rev) || 0) + 1 }));
+    await update($, recordReport, () => reportOf(text));
+  } else {
+    $.ui.toast(response.reason === 'nothing-to-fork'
+      ? 'STE session record: the session has no conversation yet.'
+      : `STE session record failed: ${response.reason}`);
+  }
+  await update($, isRecording, () => false);
+}
+
 const documentPrompt = (mode, text) => `Rewrite the text below as an ASD-STE100 document in ${modeName(mode)}.
 Write the document in the same language as the text. If the text is in Korean, write Korean. Apply the ASD-STE100 rules to that language: short sentences, one idea in each sentence, the active voice, and simple, literal words.
 Follow these rules:
@@ -132,7 +197,7 @@ export function register(on, options = {}) {
       await $.command.register({
         name: 'asd',
         description: 'Control ASD-STE100 writing mode, check text, or rewrite content',
-        argumentHint: '[on|off|80|strict|pane [on|off]|auto [on|off]|check <text>|rewrite <text>|status]'
+        argumentHint: '[on|off|80|strict|pane [on|off]|auto [on|off]|session [lite]|check <text>|rewrite <text>|status]'
       });
 
       await $.tool.register({
@@ -217,6 +282,14 @@ export function register(on, options = {}) {
       return { text: '[ASD-STE100] Mode: 100% Strict (ASD-STE100 Issue 9): max 20 words for procedures, max 25 for descriptions, approved vocabulary, active voice. The STE pane uses this mode. Use /asd on to make the answer itself STE.' };
     }
 
+    if (sub === 'session') {
+      const lite = rest.toLowerCase() === 'lite';
+      await openPane($);
+      // Run after the command returns, so the record does not belong to the command's dispatch
+      $.clock.after(0, () => { void makeRecord($, lite); });
+      return { text: `[ASD-STE100] Writing an STE record of this session in the pane${lite ? ' (lite: small model)' : ''}. This uses tokens.` };
+    }
+
     if (sub === 'auto') {
       const arg = rest.toLowerCase();
       autoRewrite = arg === 'on' ? true : arg === 'off' ? false : !autoRewrite;
@@ -295,6 +368,7 @@ Commands:
   /asd pane           - Show the last answer as an STE document in a side pane
   /asd pane [on|off]  - Open the pane by itself after each answer, or not
   /asd auto [on|off]  - Rewrite each answer as an ASD-STE100 document in the pane, or not
+  /asd session [lite] - Write an STE record of the whole session in the pane (on request only; uses tokens)
   /asd check <text>   - Lint text and inspect compliance score
   /asd rewrite <text> - Rewrite text into STE format
   /asd status         - Check current mode and settings`
@@ -404,8 +478,12 @@ async function drawPaneFor($, e, els) {
     modeLabel: modeLabel(),
     limitOf,
     isRewriting: await read($, isRewriting),
+    record: await read($, record),
+    recordReport: await read($, recordReport),
+    isRecording: await read($, isRecording),
     onTab: (id) => update($, tab, () => id),
     onRewrite: () => rewriteView($, true),
+    onRecord: () => makeRecord($),
     onClose: () => $.ui.close({ id: PANE_ID })
   }, e.props.bodyColumns);
 }
