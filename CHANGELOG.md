@@ -3,6 +3,12 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+14] - 2026-10-02
+
+### Changed
+- **The STE pane uses the header and footer blocks of an aircraft maintenance manual:** a grid with the manual name, task number, title, page block (`001` description and operation, `201` maintenance practices), effectivity, mode, revision and date, and a footer grid with the standard, score and page.
+- **The STE version uses the language of the answer.** A Korean answer becomes a Korean STE document. With `/asd on`, Claude also writes in the language of the prompt.
+
 ## [2026.10.2+13] - 2026-10-02
 
 ### Changed
@@ -122,6 +128,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+14]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B14
 [2026.10.2+13]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B13
 [2026.10.2+12]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B12
 [2026.10.2+11]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B11

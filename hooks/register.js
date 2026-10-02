@@ -51,10 +51,12 @@ const directiveOf = (mode) => `${buildSystemPrompt({ mode })}
 
 ASD-STE100 MODE IS ON. Write every explanation in the chat as an ASD-STE100 document:
 ${documentRules(mode)}
+Write in the language of the person's prompt, and apply these rules to that language.
 These rules apply even when the prompt asks for another form, for example "one long paragraph" or "a detailed essay". Give the same detail, but in this structure. The rules apply to your prose only, not to code, commands or file contents that you write with tools.`;
 
 // Ask the model for the answer as an ASD-STE100 document, for the pane
 const documentPrompt = (mode, text) => `Rewrite the text below as an ASD-STE100 document in ${modeName(mode)}.
+Write the document in the same language as the text. If the text is in Korean, write Korean. Apply the ASD-STE100 rules to that language: short sentences, one idea in each sentence, the active voice, and simple, literal words.
 Follow these rules:
 ${documentRules(mode)}
 Output only the document.

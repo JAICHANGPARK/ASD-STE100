@@ -55,7 +55,7 @@ test('each answer is rewritten as an ASD-STE100 document in the pane', async ($,
       expect(await ui.find({ type: 'Text', text: /STE version/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /Original → STE: .*avg words \d+ → \d+/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /too long 1 → 0/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /^REPLACE THE FILTER$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /REPLACE THE FILTER/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /TASK 00-01-01/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /^1\. GENERAL$/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /^ +A\. $/ })).toBeDefined()
@@ -63,7 +63,7 @@ test('each answer is rewritten as an ASD-STE100 document in the pane', async ($,
       expect(await ui.find({ type: 'Text', text: /^Stop the pump\.$/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /→USE/ })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /^ WARNING $/ })).toBeDefined()
-      expect(await ui.find({ type: 'Text', text: /^Rev 1$/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /REV 1\b/ })).toBeDefined()
 
       await ui.press({ key: 'tab-original' })
       expect(await ui.find({ type: 'Text', text: /go ahead and take out/ })).toBeDefined()

@@ -182,6 +182,7 @@ export function titleOf(text) {
 }
 
 const letter = (i) => String.fromCharCode(65 + (i % 26));
+const HANGUL = /[\uac00-\ud7a3]/;
 
 /**
  * Draw an STE document as a page of a maintenance manual.
@@ -231,7 +232,7 @@ export function manualRows(els, text, { mode, limitOf, columns }) {
       startSection(b.text);
       continue;
     }
-    if (section === 0 && b.kind !== 'code' && b.kind !== 'table') startSection('General');
+    if (section === 0 && b.kind !== 'code' && b.kind !== 'table') startSection(HANGUL.test(text) ? '개요' : 'General');
     if (b.kind === 'signal') {
       const color = SIGNAL_COLOR[b.signal];
       rows.push(

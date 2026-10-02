@@ -81,6 +81,33 @@ function changeRows(els, before, after, columns) {
   return [<Text key="chg"><Text dimColor>Original → STE: </Text>{parts}</Text>];
 }
 
+// A row of a text grid: each cell is [label, value], drawn between │ marks to the given widths
+function gridRow({ h, Text }, key, cells, widths) {
+  const parts = [<Text key="l" dimColor>│</Text>];
+  cells.forEach(([label, value, style = {}], i) => {
+    const room = widths[i] - 2;
+    const lab = label ? `${label} ` : '';
+    const val = clip(String(value), Math.max(1, room - lab.length));
+    parts.push(<Text key={`c${i}`}>{' '}<Text dimColor>{lab}</Text><Text {...style}>{val}</Text>{' '.repeat(Math.max(0, room - lab.length - val.length))}{' '}</Text>);
+    parts.push(<Text key={`s${i}`} dimColor>│</Text>);
+  });
+  return <Text key={key} wrap="truncate-end">{parts}</Text>;
+}
+
+// A border line of a text grid: left, cross and right marks, with ─ to the given widths
+const gridLine = ({ h, Text }, key, widths, [left, cross, right]) => (
+  <Text key={key} dimColor wrap="truncate-end">{left + widths.map(w => '─'.repeat(w)).join(cross) + right}</Text>
+);
+
+// Split `total` cells into widths for n columns, with the n + 1 border marks
+function splitWidths(total, shares) {
+  const room = total - shares.length - 1;
+  const sum = shares.reduce((a, b) => a + b, 0);
+  const widths = shares.map(x => Math.max(4, Math.floor((room * x) / sum)));
+  widths[widths.length - 1] += room - widths.reduce((a, b) => a + b, 0);
+  return widths;
+}
+
 /**
  * Draw the pane as a page of a maintenance manual:
  *   title block   ASD-STE100, task number, mode, document title, status
@@ -97,8 +124,9 @@ export function drawPane(els, pane, columns) {
   const { view, report, tab, mode, modeLabel, limitOf, isRewriting, onTab, onRewrite, onClose } = pane;
   const width = Math.max(20, columns);
   const isFramed = width >= 50;
-  const inner = isFramed ? width - 4 : width;
-  const rule = (k) => <Text key={k} dimColor>{'─'.repeat(inner)}</Text>;
+  const inner = width;
+  // The body sits inside one cell of padding on each side of a framed page
+  const bodyWidth = isFramed ? width - 2 : width;
 
   let status;
   let body = [];
@@ -107,7 +135,7 @@ export function drawPane(els, pane, columns) {
     status = <Text dimColor>The pane shows the next answer as an ASD-STE100 document.</Text>;
   } else if (tab === 'original') {
     status = <Text dimColor>Original answer, as Claude wrote it</Text>;
-    body = viewRows(els, view.original, { mode, limitOf, columns: inner });
+    body = viewRows(els, view.original, { mode, limitOf, columns: bodyWidth });
   } else if (isRewriting && view.source !== 'rewrite') {
     status = <Text color="yellow">Rewriting the answer as an ASD-STE100 document…</Text>;
     body = [<Text key="wait" dimColor>Press o to read the original answer now.</Text>];
@@ -116,37 +144,60 @@ export function drawPane(els, pane, columns) {
       ? <Text color="green">STE version</Text>
       : <Text><Text color="yellow">Original answer, not rewritten</Text><Text dimColor> · r: rewrite</Text></Text>;
     body = tab === 'check' && report
-      ? checkRows(els, report, limitOf, inner)
-      : manualRows(els, view.text, { mode, limitOf, columns: inner });
+      ? checkRows(els, report, limitOf, bodyWidth)
+      : manualRows(els, view.text, { mode, limitOf, columns: bodyWidth });
     if (view.source === 'rewrite') {
       info = changeRows(els, statsOf(view.original, mode, limitOf), statsOf(view.text, mode, limitOf), inner);
     }
   }
 
-  const task = view ? `TASK 00-01-${String(view.task || 1).padStart(2, '0')}` : 'TASK 00-01-00';
-  const title = (view && titleOf(view.text)) || 'LAST ANSWER';
-  const facts = [
-    report ? <Text key="f-score"><Text dimColor>Score </Text><Text color={scoreColor(report.score)}>{`${report.score}/100`}</Text></Text> : null,
-    <Text key="f-rev"><Text dimColor>Rev </Text>{String(view ? view.rev || 0 : 0)}</Text>,
-    view && view.date ? <Text key="f-date">{view.date}</Text> : null,
-    <Text key="f-page" dimColor>Page 1 of 1</Text>,
-  ].filter(Boolean);
+  const taskNo = `00-01-${String((view && view.task) || 0).padStart(2, '0')}`;
+  const title = ((view && titleOf(view.text)) || 'Last answer').toUpperCase();
+  // AMM page blocks: 001 description and operation, 201 maintenance practices (a text with steps)
+  const hasSteps = !!view && blocksOf(view.text).some(b => b.kind === 'step');
+  const block = hasSteps ? ['201', 'MAINTENANCE PRACTICES'] : ['001', 'DESCRIPTION & OPERATION'];
+  const rev = String(view ? view.rev || 0 : 0);
+  const score = report ? `${report.score}/100` : '—';
+
+  let header;
+  let footer;
+  if (isFramed) {
+    const top = splitWidths(inner, [3, 1]);
+    const cells = splitWidths(inner, [3, 2, 1, 2]);
+    const foot = splitWidths(inner, [2, 2, 3]);
+    header = [
+      gridLine(els, 'h0', top, ['┌', '┬', '┐']),
+      gridRow(els, 'h1', [['', 'ASD-STE100  STE MAINTENANCE MANUAL', { bold: true }], ['TASK', taskNo, { bold: true }]], top),
+      gridRow(els, 'h2', [['', title, { bold: true, color: 'cyan' }], ['PAGE BLOCK', block[0]]], top),
+      gridLine(els, 'h3', top, ['├', '┴', '┤']),
+      gridRow(els, 'h4', [['', block[1]]], [inner - 2]),
+      gridLine(els, 'h5', cells, ['├', '┬', '┤']),
+      gridRow(els, 'h6', [['EFFECTIVITY', 'ALL'], ['MODE', /STRICT/.test(modeLabel) ? 'STRICT 100%' : '80% STE'], ['REV', rev, { bold: true }], ['DATE', (view && view.date) || '—']], cells),
+      gridLine(els, 'h7', cells, ['└', '┴', '┘']),
+    ];
+    footer = [
+      gridLine(els, 'f0', foot, ['┌', '┬', '┐']),
+      gridRow(els, 'f1', [['', 'ASD-STE100 ISSUE 9'], ['SCORE', score, report ? { color: scoreColor(report.score), bold: true } : {}], ['', `${taskNo}  PAGE ${block[0]}`]], foot),
+      gridLine(els, 'f2', foot, ['└', '┴', '┘']),
+    ];
+  } else {
+    header = [
+      <Text key="h1"><Text inverse bold> ASD-STE100 </Text><Text bold>{`  TASK ${taskNo}`}</Text></Text>,
+      <Text key="h2" bold color="cyan">{title}</Text>,
+      <Text key="h3" dimColor>{`${block[1]} · ${modeLabel} · REV ${rev}`}</Text>,
+    ];
+    footer = [<Text key="f1" dimColor>{`SCORE ${score} · PAGE ${block[0]}`}</Text>];
+  }
 
   const page = (
-    <Box key="page" flexDirection="column" width={width} {...(isFramed ? { borderStyle: 'single', borderColor: 'gray', paddingX: 1 } : {})}>
-      <Box flexDirection="row" justifyContent="space-between">
-        <Text inverse bold> ASD-STE100 </Text>
-        <Text><Text bold>{task}</Text><Text dimColor>{`  ${modeLabel}`}</Text></Text>
-      </Box>
-      <Text bold>{title.toUpperCase()}</Text>
+    <Box key="page" flexDirection="column" width={width}>
+      {header}
       {status}
-      {rule('r1')}
-      {body}
-      {rule('r2')}
+      <Text key="gap1"> </Text>
+      <Box flexDirection="column" paddingX={isFramed ? 1 : 0}>{body}</Box>
+      <Text key="gap2"> </Text>
       {info}
-      <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
-        {facts.flatMap((f, i) => (i === 0 ? [f] : [<Text key={`sep${i}`} dimColor>│</Text>, f]))}
-      </Box>
+      {footer}
     </Box>
   );
 

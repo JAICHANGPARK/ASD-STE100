@@ -89,30 +89,36 @@ The mod keeps Claude's answer as Claude wrote it. After each answer, the STE pan
 After each answer, the STE pane opens beside the transcript. A small model (haiku) rewrites the answer as an ASD-STE100 document, and the pane shows that STE version as a page of a maintenance manual:
 
 ```
-┌──────────────────────────────────────────────┐
-│ ASD-STE100              TASK 00-01-03  80%   │
-│ FLUTTER WIDGETS                              │
-│ STE version                                  │
-│ ──────────────────────────────────────────── │
-│ 1. GENERAL                                   │
-│    A. In Flutter, everything on the screen   │
-│       is a widget.                           │
-│ 2. PROCEDURE                                 │
-│    (1) Run the app in debug mode.            │
-│ ┌───────────── WARNING ────────────────────┐ │
-│ │ Do not put a large tree in one build().  │ │
-│ └──────────────────────────────────────────┘ │
-│ ──────────────────────────────────────────── │
-│ Original → STE: avg words 19 → 7 · ...       │
-│ Score 97/100 │ Rev 1 │ 2026-10-02 │ Page 1 of 1 │
-└──────────────────────────────────────────────┘
+┌───────────────────────────────────────┬──────────────────┐
+│ ASD-STE100  STE MAINTENANCE MANUAL    │ TASK 00-01-03    │
+│ FLUTTER WIDGETS                       │ PAGE BLOCK 201   │
+├───────────────────────────────────────┴──────────────────┤
+│ MAINTENANCE PRACTICES                                    │
+├───────────────────┬─────────────┬────────┬───────────────┤
+│ EFFECTIVITY ALL   │ MODE 80% STE│ REV 1  │ DATE 2026-10-02│
+└───────────────────┴─────────────┴────────┴───────────────┘
+STE version
+
+ 1. GENERAL
+    A. In Flutter, everything on the screen is a widget.
+ 2. PROCEDURE
+    (1) Run the app in debug mode.
+ ┌──────────────── WARNING ────────────────┐
+ │ Do not put a large tree in one build(). │
+ └─────────────────────────────────────────┘
+
+Original → STE: avg words 19 → 7 · too long 3 → 0
+┌──────────────────┬──────────────────┬────────────────────┐
+│ ASD-STE100 ISSUE 9│ SCORE 97/100     │ 00-01-03  PAGE 201 │
+└──────────────────┴──────────────────┴────────────────────┘
 ```
 
-- A title block with the task number, the mode and the document title.
+- A header block, as in an aircraft maintenance manual: the task number, the title, the page block (`001` description and operation, `201` maintenance practices when the text has steps), effectivity, mode, revision and date.
 - Sections numbered `1.`, sentences `A.`, procedure steps `(1)`, list items `(a)`. One idea in each sentence.
 - **WARNING**, **CAUTION**, and **NOTE** as boxes with the signal word in the middle.
 - Unapproved words in red, with the approved word after them (`utilize →USE`).
-- An info block with the change summary, the STE check score, the revision (each `r` adds one) and the date.
+- A footer block with the standard, the STE check score and the page. The change summary sits above it. Each `r` adds one to the revision.
+- The STE version uses the language of the answer. A Korean answer becomes a Korean STE document: the mod applies the STE rules (short sentences, one idea in each sentence, the active voice, simple words) to that language.
 
 The header shows the STE check score of the text in view, and one line that says what the rewrite changed, for example `Original → STE: avg words 19 → 7 · too long 3 → 0 · tables 1 → 0 · phrasal verbs 2 → 0`. Pane keys: `v` STE version, `o` original answer, `c` check (score and findings), `r` rewrite again, `x` close.
 
