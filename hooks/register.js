@@ -95,7 +95,7 @@ async function rewriteView($, force = false) {
   if (now && now.original === original) {
     if (response.isAnswered) {
       const text = response.text.trim();
-      await update($, view, (v) => ({ ...v, text, source: 'rewrite' }));
+      await update($, view, (v) => ({ ...v, text, source: 'rewrite', rev: (v.rev || 0) + 1 }));
       await update($, report, () => reportOf(text));
     } else {
       $.ui.toast(`STE rewrite failed: ${response.reason}`);
@@ -355,7 +355,12 @@ Commands:
   on('turn.complete', async ($, e, next) => {
     if (!e.agentId && !e.isAborted && e.answer.trim()) {
       const asked = await read($, isAsked);
-      await update($, view, () => ({ text: e.answer, original: e.answer, source: 'answer', isAsked: asked }));
+      const previous = await read($, view);
+      const date = new Date(await $.clock.now()).toISOString().slice(0, 10);
+      await update($, view, () => ({
+        text: e.answer, original: e.answer, source: 'answer', isAsked: asked,
+        task: ((previous && previous.task) || 0) + 1, rev: 0, date
+      }));
       await update($, report, () => reportOf(e.answer));
       await update($, tab, () => 'view');
       await update($, isRewriting, () => autoRewrite);

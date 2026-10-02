@@ -86,13 +86,33 @@ The mod keeps Claude's answer as Claude wrote it. After each answer, the STE pan
 
 ### STE pane
 
-After each answer, the STE pane opens beside the transcript. A small model (haiku) rewrites the answer as an ASD-STE100 document, and the pane shows that STE version:
+After each answer, the STE pane opens beside the transcript. A small model (haiku) rewrites the answer as an ASD-STE100 document, and the pane shows that STE version as a page of a maintenance manual:
 
-- A title, and one heading for each topic. A maximum of 6 sentences in each paragraph.
-- One idea in each sentence. A sentence over the word limit shows its word count in red.
-- Procedures as numbered steps, with one command in each step.
-- **WARNING**, **CAUTION**, and **NOTE** as signal blocks.
+```
+┌──────────────────────────────────────────────┐
+│ ASD-STE100              TASK 00-01-03  80%   │
+│ FLUTTER WIDGETS                              │
+│ STE version                                  │
+│ ──────────────────────────────────────────── │
+│ 1. GENERAL                                   │
+│    A. In Flutter, everything on the screen   │
+│       is a widget.                           │
+│ 2. PROCEDURE                                 │
+│    (1) Run the app in debug mode.            │
+│ ┌───────────── WARNING ────────────────────┐ │
+│ │ Do not put a large tree in one build().  │ │
+│ └──────────────────────────────────────────┘ │
+│ ──────────────────────────────────────────── │
+│ Original → STE: avg words 19 → 7 · ...       │
+│ Score 97/100 │ Rev 1 │ 2026-10-02 │ Page 1 of 1 │
+└──────────────────────────────────────────────┘
+```
+
+- A title block with the task number, the mode and the document title.
+- Sections numbered `1.`, sentences `A.`, procedure steps `(1)`, list items `(a)`. One idea in each sentence.
+- **WARNING**, **CAUTION**, and **NOTE** as boxes with the signal word in the middle.
 - Unapproved words in red, with the approved word after them (`utilize →USE`).
+- An info block with the change summary, the STE check score, the revision (each `r` adds one) and the date.
 
 The header shows the STE check score of the text in view, and one line that says what the rewrite changed, for example `Original → STE: avg words 19 → 7 · too long 3 → 0 · tables 1 → 0 · phrasal verbs 2 → 0`. Pane keys: `v` STE version, `o` original answer, `c` check (score and findings), `r` rewrite again, `x` close.
 

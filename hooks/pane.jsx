@@ -1,7 +1,7 @@
 /**
  * STE pane: the last answer as an ASD-STE100 document, docked beside the transcript.
  *
- *   v  view      the answer rewritten as an ASD-STE100 document
+ *   v  view      the answer rewritten as an ASD-STE100 document, laid out as a manual page
  *   o  original  the answer as Claude wrote it
  *   c  check     the score and the findings of the text in view
  *   r  rewrite   rewrite the answer again
@@ -10,7 +10,7 @@
 
 import { validateText } from '../lib/ste-engine.js';
 import { clip, findingRows, findingsOf, lengthRows, proseOf } from './sheet.jsx';
-import { blocksOf, viewRows } from './view.jsx';
+import { blocksOf, manualRows, titleOf, viewRows } from './view.jsx';
 
 export const PANE_ID = 'ste-sheet';
 
@@ -82,53 +82,77 @@ function changeRows(els, before, after, columns) {
 }
 
 /**
- * Draw the pane.
+ * Draw the pane as a page of a maintenance manual:
+ *   title block   ASD-STE100, task number, mode, document title, status
+ *   body          the STE document, numbered 1. / A. / (1) / (a)
+ *   info block    change summary, score, revision, date, page
+ * Below 50 cells the page has no outer frame, so the text keeps its width.
  * @param {object} els  - the surface's element table ($.ui.resolve(e)) plus `h`
  * @param {object} pane - { view, report, tab, mode, modeLabel, limitOf, isRewriting, onTab, onRewrite, onClose }
- *   view: { text, source: 'answer' | 'rewrite', isAsked } | null
+ *   view: { text, original, source: 'answer' | 'rewrite', isAsked, task, rev, date } | null
  * @param {number} columns - cells across the pane body
  */
 export function drawPane(els, pane, columns) {
   const { h, Box, Text, Button } = els;
   const { view, report, tab, mode, modeLabel, limitOf, isRewriting, onTab, onRewrite, onClose } = pane;
   const width = Math.max(20, columns);
-
-  const score = report ? (
-    <Text dimColor>{` · score `}<Text color={scoreColor(report.score)}>{`${report.score}/100`}</Text>{` · ${report.totalIssues} issues`}</Text>
-  ) : null;
+  const isFramed = width >= 50;
+  const inner = isFramed ? width - 4 : width;
+  const rule = (k) => <Text key={k} dimColor>{'─'.repeat(inner)}</Text>;
 
   let status;
   let body = [];
+  let info = [];
   if (!view) {
     status = <Text dimColor>The pane shows the next answer as an ASD-STE100 document.</Text>;
   } else if (tab === 'original') {
     status = <Text dimColor>Original answer, as Claude wrote it</Text>;
-    body = viewRows(els, view.original, { mode, limitOf, columns: width });
+    body = viewRows(els, view.original, { mode, limitOf, columns: inner });
   } else if (isRewriting && view.source !== 'rewrite') {
     status = <Text color="yellow">Rewriting the answer as an ASD-STE100 document…</Text>;
     body = [<Text key="wait" dimColor>Press o to read the original answer now.</Text>];
   } else {
     status = view.source === 'rewrite'
-      ? <Text><Text color="green">STE version</Text>{score}</Text>
-      : <Text><Text color="yellow">Original answer, not rewritten</Text>{score}<Text dimColor> · r: rewrite</Text></Text>;
+      ? <Text color="green">STE version</Text>
+      : <Text><Text color="yellow">Original answer, not rewritten</Text><Text dimColor> · r: rewrite</Text></Text>;
     body = tab === 'check' && report
-      ? checkRows(els, report, limitOf, width)
-      : viewRows(els, view.text, { mode, limitOf, columns: width });
+      ? checkRows(els, report, limitOf, inner)
+      : manualRows(els, view.text, { mode, limitOf, columns: inner });
     if (view.source === 'rewrite') {
-      status = [status, ...changeRows(els, statsOf(view.original, mode, limitOf), statsOf(view.text, mode, limitOf), width)];
+      info = changeRows(els, statsOf(view.original, mode, limitOf), statsOf(view.text, mode, limitOf), inner);
     }
   }
 
+  const task = view ? `TASK 00-01-${String(view.task || 1).padStart(2, '0')}` : 'TASK 00-01-00';
+  const title = (view && titleOf(view.text)) || 'LAST ANSWER';
+  const facts = [
+    report ? <Text key="f-score"><Text dimColor>Score </Text><Text color={scoreColor(report.score)}>{`${report.score}/100`}</Text></Text> : null,
+    <Text key="f-rev"><Text dimColor>Rev </Text>{String(view ? view.rev || 0 : 0)}</Text>,
+    view && view.date ? <Text key="f-date">{view.date}</Text> : null,
+    <Text key="f-page" dimColor>Page 1 of 1</Text>,
+  ].filter(Boolean);
+
+  const page = (
+    <Box key="page" flexDirection="column" width={width} {...(isFramed ? { borderStyle: 'single', borderColor: 'gray', paddingX: 1 } : {})}>
+      <Box flexDirection="row" justifyContent="space-between">
+        <Text inverse bold> ASD-STE100 </Text>
+        <Text><Text bold>{task}</Text><Text dimColor>{`  ${modeLabel}`}</Text></Text>
+      </Box>
+      <Text bold>{title.toUpperCase()}</Text>
+      {status}
+      {rule('r1')}
+      {body}
+      {rule('r2')}
+      {info}
+      <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
+        {facts.flatMap((f, i) => (i === 0 ? [f] : [<Text key={`sep${i}`} dimColor>│</Text>, f]))}
+      </Box>
+    </Box>
+  );
+
   return (
     <Box flexDirection="column" width={width}>
-      <Text>
-        <Text inverse bold> ASD-STE100 </Text>
-        <Text dimColor>{` ${modeLabel}`}</Text>
-      </Text>
-      {status}
-      <Text dimColor>{'─'.repeat(width)}</Text>
-      {body}
-      <Text dimColor>{'─'.repeat(width)}</Text>
+      {page}
       <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
         <Button key="tab-view" plain hotkey="v" label="view" dimColor={tab !== 'view'} onPress={() => onTab('view')} />
         <Button key="tab-original" plain hotkey="o" label="original" dimColor={tab !== 'original'} onPress={() => onTab('original')} />
