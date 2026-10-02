@@ -75,7 +75,12 @@ const reportOf = (text) => {
 
 async function openPane($) {
   await update($, paneOpen, () => true);
-  return $.ui.open({ id: PANE_ID, title: 'STE' });
+  const opened = await $.ui.open({ id: PANE_ID, title: 'STE' });
+  // A pane the mod opens by itself waits below 144 terminal columns. Say so, not an empty screen.
+  if (opened && opened.isPlaced === false) {
+    $.ui.toast('STE pane is ready. Make the terminal 144 columns or wider, or type /asd pane.');
+  }
+  return opened;
 }
 
 // Rewrite the original answer in STE for the pane
@@ -366,7 +371,8 @@ Commands:
       await update($, report, () => reportOf(e.answer));
       await update($, tab, () => 'view');
       await update($, isRewriting, () => autoRewrite);
-      if (paneAuto && !(await read($, paneOpen))) void openPane($);
+      // Open it each time: a pane that is already open only keeps its place, and a state left from a resumed session cannot keep it closed
+      if (paneAuto) await openPane($);
       // Rewrite after the turn ends, so the rewrite does not belong to the turn's dispatch
       if (autoRewrite) $.clock.after(0, () => { void rewriteView($); });
     }

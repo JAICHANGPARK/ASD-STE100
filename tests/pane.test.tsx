@@ -160,3 +160,18 @@ test('code blocks and tables draw as markdown, and model numbers are not doubled
     await ui.unmount()
   }
 })
+
+test('a pane that waits on a narrow terminal says how to open it', async ($, on) => {
+  const toasts: string[] = []
+  mock.clock(on)
+  on('prompt.submit', (_$: unknown, e: unknown) => e as never)
+  on('turn.complete', () => ({ text: '' }))
+  on('ui.open', () => ({ value: { isPlaced: false } }) as never)
+  on('ui.toast', (_$: unknown, e: any) => {
+    toasts.push(e.text)
+    return { value: {} } as never
+  })
+  await $.prompt.submit({ text: 'What is a database index?' })
+  await $.turn.complete({ answer: 'An index makes a search fast.', durationMs: 10, isAborted: false, turnId: 't', reason: 'answer' })
+  expect(toasts.join(' ')).toContain('/asd pane')
+})

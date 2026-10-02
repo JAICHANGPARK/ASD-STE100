@@ -3,6 +3,12 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+16] - 2026-10-02
+
+### Fixed
+- **The STE pane opens after each answer even when a resumed session says it is open.** The mod no longer skips the open when its saved state says the pane is open.
+- **A toast explains a waiting pane.** Claude Code shows a pane that a mod opens by itself only at 144 terminal columns or wider. Below that, the mod now says: "Make the terminal 144 columns or wider, or type /asd pane."
+
 ## [2026.10.2+15] - 2026-10-02
 
 ### Fixed
@@ -134,6 +140,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+16]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B16
 [2026.10.2+15]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B15
 [2026.10.2+14]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B14
 [2026.10.2+13]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B13
