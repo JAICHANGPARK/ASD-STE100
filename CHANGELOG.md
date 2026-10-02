@@ -3,6 +3,11 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+5] - 2026-10-02
+
+### Fixed
+- **Empty status line:** after `/asd off`, the mod left an empty `asd-ste100:` line under the prompt. It now removes the line.
+
 ## [2026.10.2+4] - 2026-10-02
 
 ### Changed

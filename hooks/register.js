@@ -76,7 +76,7 @@ async function rewriteView($) {
 
 // Show the current state in the status line and redraw the spinner suffix
 function refreshUi($) {
-  $.ui.status(steActive ? `STE [${modeLabel()}]: Active` : '');
+  $.ui.status(steActive ? `STE [${modeLabel()}]: Active` : undefined);
   $.ui.invalidate('ui.render');
 }
 
