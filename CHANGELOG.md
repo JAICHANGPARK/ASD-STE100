@@ -3,6 +3,11 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [Unreleased]
+
+### Added
+- **STE sheet:** after each turn, the mod shows the score, sentence lengths and findings of the last answer above the prompt. Use `/ste sheet [on|off]` to control it.
+
 ## [2026.10.2] - 2026-10-02
 
 ### Added

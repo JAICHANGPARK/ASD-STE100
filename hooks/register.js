@@ -5,13 +5,21 @@
  * - /ste command (on, off, 80, strict, check, rewrite, status)
  * - Automatic prompt guidance injection when active
  * - UI status indicator & spinner suffix
+ * - STE sheet above the prompt after each turn (/ste sheet on|off)
  * - Built-in Claude tools: mcp__asd-ste100__validate_ste & mcp__asd-ste100__rewrite_ste
  */
 
 import { validateText, buildSystemPrompt } from '../lib/ste-engine.js';
+import { drawSheet, proseOf } from './sheet.jsx';
 
 let steActive = false;
 let steMode = 'pragmatic'; // 'pragmatic' (80% Karpathy mode) or 'strict' (100% ASD-STE100)
+let sheetEnabled = true; // Show the STE sheet above the prompt after each turn
+let sheetHidden = false; // Hidden with the Hide button until the next turn
+let lastReport = null; // validateText report of the last answer
+
+// Word limit for one sentence of a report
+const limitOf = (sentence) => (sentence.isProcedural && steMode === 'strict' ? 20 : 25);
 
 const modeLabel = () => (steMode === 'strict' ? 'STRICT 100%' : 'PRAGMATIC 80%');
 const modeName = (mode) => (mode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100 (Karpathy Pragmatic Mode)');
@@ -44,7 +52,7 @@ export function register(on, options = {}) {
       await $.command.register({
         name: 'ste',
         description: 'Control ASD-STE100 writing mode, check text, or rewrite content',
-        argumentHint: '[on|off|80|strict|check <text>|rewrite <text>|status]'
+        argumentHint: '[on|off|80|strict|sheet [on|off]|check <text>|rewrite <text>|status]'
       });
 
       await $.tool.register({
@@ -79,6 +87,8 @@ export function register(on, options = {}) {
       if (typeof savedActive === 'boolean') steActive = savedActive;
       const savedMode = await $.store.get('ste_mode');
       if (savedMode === 'strict' || savedMode === 'pragmatic') steMode = savedMode;
+      const savedSheet = await $.store.get('ste_sheet');
+      if (typeof savedSheet === 'boolean') sheetEnabled = savedSheet;
 
       if (steActive) refreshUi($);
     } catch (err) {
@@ -129,12 +139,22 @@ export function register(on, options = {}) {
       return { text: '[ASD-STE100] Switched to 100% Strict Mode (ASD-STE100 Issue 9): max 20 words for procedures, max 25 for descriptions, approved vocabulary, active voice, no semicolons or contractions.' };
     }
 
+    if (sub === 'sheet') {
+      const arg = rest.toLowerCase();
+      sheetEnabled = arg === 'on' ? true : arg === 'off' ? false : !sheetEnabled;
+      sheetHidden = false;
+      await $.store.set('ste_sheet', sheetEnabled);
+      $.ui.invalidate('ui.render');
+      return { text: `[ASD-STE100] STE sheet ${sheetEnabled ? 'ON: it shows above the prompt after each turn' : 'OFF'}.` };
+    }
+
     if (sub === 'status') {
       return {
         text: `[ASD-STE100 Status]
 - State: ${steActive ? 'ACTIVE (automatically formatting prompts)' : 'INACTIVE'}
 - Mode: ${modeLabel()}
-- Commands: /ste [on|off|80|strict|check <text>|rewrite <text>]`
+- Sheet: ${sheetEnabled ? 'ON' : 'OFF'}
+- Commands: /ste [on|off|80|strict|sheet [on|off]|check <text>|rewrite <text>]`
       };
     }
 
@@ -184,6 +204,7 @@ Commands:
   /ste off            - Deactivate STE enhancement
   /ste 80             - Set to 80% Pragmatic Mode (Karpathy style, readable & fast)
   /ste strict         - Set to 100% Strict ASD-STE100 standard
+  /ste sheet [on|off] - Show or hide the STE sheet after each turn
   /ste check <text>   - Lint text and inspect compliance score
   /ste rewrite <text> - Rewrite text into STE format
   /ste status         - Check current mode and settings`
@@ -241,5 +262,34 @@ Commands:
         suffix: (e.props && e.props.suffix ? e.props.suffix : '') + suffix
       }
     });
+  });
+
+  // Lint the final answer of each main-loop turn for the STE sheet
+  on('turn.complete', async ($, e, next) => {
+    if (!e.agentId && !e.isAborted) {
+      const prose = proseOf(e.answer);
+      const report = prose ? validateText(prose, { mode: steMode }) : null;
+      lastReport = report && report.totalSentences > 0 ? report : null;
+      sheetHidden = false;
+      $.ui.invalidate('ui.render');
+    }
+    return next(e);
+  });
+
+  // Draw the STE sheet above the prompt
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (!sheetEnabled || sheetHidden || !lastReport || e.props.hasSurvey || e.props.isWorking) {
+      return next(e);
+    }
+    const els = { h, ...$.ui.resolve(e) };
+    return drawSheet(els, {
+      report: lastReport,
+      modeLabel: modeLabel(),
+      limitOf,
+      onHide: () => {
+        sheetHidden = true;
+        $.ui.invalidate('ui.render');
+      }
+    }, e.props.bodyColumns);
   });
 }
