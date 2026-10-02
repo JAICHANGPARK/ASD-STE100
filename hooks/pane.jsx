@@ -1,9 +1,10 @@
 /**
  * STE pane: the last answer as an ASD-STE100 document, docked beside the transcript.
  *
- *   v  view     the answer laid out as an STE document
- *   c  check    the score and the findings of that text
- *   r  rewrite  rewrite an answer that is not in STE
+ *   v  view      the answer rewritten as an ASD-STE100 document
+ *   o  original  the answer as Claude wrote it
+ *   c  check     the score and the findings of the text in view
+ *   r  rewrite   rewrite the answer again
  *   x  close
  */
 
@@ -49,19 +50,24 @@ export function drawPane(els, pane, columns) {
   const { view, report, tab, mode, modeLabel, limitOf, isRewriting, onTab, onRewrite, onClose } = pane;
   const width = Math.max(20, columns);
 
+  const score = report ? (
+    <Text dimColor>{` · score `}<Text color={scoreColor(report.score)}>{`${report.score}/100`}</Text>{` · ${report.totalIssues} issues`}</Text>
+  ) : null;
+
   let status;
-  let body;
+  let body = [];
   if (!view) {
-    status = <Text dimColor>Ask for an ASD-STE100 explanation, or press r after an answer.</Text>;
-    body = [];
+    status = <Text dimColor>The pane shows the next answer as an ASD-STE100 document.</Text>;
+  } else if (tab === 'original') {
+    status = <Text dimColor>Original answer, as Claude wrote it</Text>;
+    body = viewRows(els, view.original, { mode, limitOf, columns: width });
+  } else if (isRewriting && view.source !== 'rewrite') {
+    status = <Text color="yellow">Rewriting the answer as an ASD-STE100 document…</Text>;
+    body = [<Text key="wait" dimColor>Press o to read the original answer now.</Text>];
   } else {
-    status = isRewriting
-      ? <Text color="yellow">Rewriting the last answer in STE…</Text>
-      : view.source === 'rewrite'
-        ? <Text color="green">✓ Rewritten in STE</Text>
-        : view.isAsked
-          ? <Text color="green">✓ Answer written in STE</Text>
-          : <Text color="yellow">This answer is not in STE. Press r to rewrite it.</Text>;
+    status = view.source === 'rewrite'
+      ? <Text><Text color="green">STE version</Text>{score}</Text>
+      : <Text><Text color="yellow">Original answer, not rewritten</Text>{score}<Text dimColor> · r: rewrite</Text></Text>;
     body = tab === 'check' && report
       ? checkRows(els, report, limitOf, width)
       : viewRows(els, view.text, { mode, limitOf, columns: width });
@@ -78,7 +84,8 @@ export function drawPane(els, pane, columns) {
       {body}
       <Text dimColor>{'─'.repeat(width)}</Text>
       <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
-        <Button key="tab-view" plain hotkey="v" label="view" dimColor={tab === 'check'} onPress={() => onTab('view')} />
+        <Button key="tab-view" plain hotkey="v" label="view" dimColor={tab !== 'view'} onPress={() => onTab('view')} />
+        <Button key="tab-original" plain hotkey="o" label="original" dimColor={tab !== 'original'} onPress={() => onTab('original')} />
         <Button key="tab-check" plain hotkey="c" label="check" dimColor={tab !== 'check'} onPress={() => onTab('check')} />
         <Button key="rewrite" plain hotkey="r" label="rewrite" dimColor={!view || isRewriting} onPress={onRewrite} />
         <Button key="close" plain hotkey="x" label="close" role="dismiss" onPress={onClose} />

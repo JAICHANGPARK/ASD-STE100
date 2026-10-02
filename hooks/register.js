@@ -18,6 +18,7 @@ import { STE_REQUEST } from './view.jsx';
 let steActive = false;
 let steMode = 'pragmatic'; // 'pragmatic' (80% Karpathy mode) or 'strict' (100% ASD-STE100)
 let paneAuto = true; // Open the STE pane by itself after each answer
+let autoRewrite = true; // Rewrite each answer into an ASD-STE100 document for the pane
 
 // STE pane values. $.state keeps them across a reload of the module, and a write redraws the pane.
 const view = atom({ plugin: 'asd-ste100', key: 'view' }, null);
@@ -34,6 +35,22 @@ const modeLabel = () => (steMode === 'strict' ? 'STRICT 100%' : 'PRAGMATIC 80%')
 const modeName = (mode) => (mode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100 (Karpathy Pragmatic Mode)');
 
 // Ask the model for the rewritten text only, without commentary
+// Ask the model for the answer as an ASD-STE100 document, for the pane
+const documentPrompt = (mode, text) => `Rewrite the text below as an ASD-STE100 document in ${modeName(mode)}.
+Follow these rules:
+- Start with a short title line: "# <title>".
+- Give each topic its own "## <heading>". Write a maximum of 6 sentences in each paragraph.
+- Write one idea in each sentence. Do not join two clauses with ", and" or ", so".
+- Write a maximum of ${mode === 'strict' ? 20 : 25} words in each sentence. Use the active voice.
+- Do not use phrasal verbs ("set up" -> "install", "look up" -> "find", "break down" -> "divide").
+- Use simple, literal words. Do not use idioms.
+- Write procedures as numbered steps, with one command in each step.
+- Write risks as "WARNING:" (injury, data loss) or "CAUTION:" (damage) lines.
+- Keep code blocks, code names and technical names unchanged.
+Output only the document.
+
+${text}`;
+
 const rewritePrompt = (mode, text) =>
   `Rewrite the following text into ${modeName(mode)}. Output only the rewritten text. Do not add headings, explanations, or notes.\n\n${text}`;
 
@@ -50,25 +67,31 @@ async function openPane($) {
 }
 
 // Rewrite the original answer in STE for the pane
-async function rewriteView($) {
+// force: rewrite again when the pane already shows an STE version (the r key)
+async function rewriteView($, force = false) {
   const current = await read($, view);
-  if (!current || (await read($, isRewriting))) return;
+  if (!current || (!force && current.source === 'rewrite')) return;
+  const original = current.original;
   await update($, isRewriting, () => true);
   const response = await $.model.complete({
     model: 'haiku',
     system: buildSystemPrompt({ mode: steMode }),
-    prompt: `${rewritePrompt(steMode, current.original)}\n\nKeep the headings, lists, code blocks and WARNING or CAUTION signals.`,
-    maxTokens: 2000,
-    timeoutMs: 60000
+    prompt: documentPrompt(steMode, original),
+    maxTokens: 3000,
+    timeoutMs: 90000
   });
-  if (response.isAnswered) {
-    const text = response.text.trim();
-    await update($, view, (v) => ({ ...(v ?? current), text, source: 'rewrite' }));
-    await update($, report, () => reportOf(text));
-  } else {
-    $.ui.toast(`STE rewrite failed: ${response.reason}`);
+  // Keep the result only if the pane still shows the same answer
+  const now = await read($, view);
+  if (now && now.original === original) {
+    if (response.isAnswered) {
+      const text = response.text.trim();
+      await update($, view, (v) => ({ ...v, text, source: 'rewrite' }));
+      await update($, report, () => reportOf(text));
+    } else {
+      $.ui.toast(`STE rewrite failed: ${response.reason}`);
+    }
+    await update($, isRewriting, () => false);
   }
-  await update($, isRewriting, () => false);
 }
 
 // Show the current state in the status line and redraw the spinner suffix
@@ -92,7 +115,7 @@ export function register(on, options = {}) {
       await $.command.register({
         name: 'asd',
         description: 'Control ASD-STE100 writing mode, check text, or rewrite content',
-        argumentHint: '[on|off|80|strict|pane [on|off]|check <text>|rewrite <text>|status]'
+        argumentHint: '[on|off|80|strict|pane [on|off]|auto [on|off]|check <text>|rewrite <text>|status]'
       });
 
       await $.tool.register({
@@ -129,6 +152,8 @@ export function register(on, options = {}) {
       if (savedMode === 'strict' || savedMode === 'pragmatic') steMode = savedMode;
       const savedPane = await $.store.get('ste_pane');
       if (typeof savedPane === 'boolean') paneAuto = savedPane;
+      const savedRewrite = await $.store.get('ste_autorewrite');
+      if (typeof savedRewrite === 'boolean') autoRewrite = savedRewrite;
 
       if (steActive) refreshUi($);
     } catch (err) {
@@ -179,6 +204,13 @@ export function register(on, options = {}) {
       return { text: '[ASD-STE100] Switched to 100% Strict Mode (ASD-STE100 Issue 9): max 20 words for procedures, max 25 for descriptions, approved vocabulary, active voice, no semicolons or contractions.' };
     }
 
+    if (sub === 'auto') {
+      const arg = rest.toLowerCase();
+      autoRewrite = arg === 'on' ? true : arg === 'off' ? false : !autoRewrite;
+      await $.store.set('ste_autorewrite', autoRewrite);
+      return { text: `[ASD-STE100] Auto rewrite ${autoRewrite ? 'ON: the pane shows each answer rewritten as an ASD-STE100 document' : 'OFF: press r in the pane to rewrite an answer'}.` };
+    }
+
     if (sub === 'pane') {
       const arg = rest.toLowerCase();
       if (arg === 'on' || arg === 'off') {
@@ -196,6 +228,7 @@ export function register(on, options = {}) {
 - State: ${steActive ? 'ACTIVE (automatically formatting prompts)' : 'INACTIVE'}
 - Mode: ${modeLabel()}
 - Pane: ${paneAuto ? 'opens by itself after each answer' : 'opens only with /asd pane'}
+- Auto rewrite: ${autoRewrite ? 'ON (one small model call for each answer)' : 'OFF'}
 - Commands: /asd [on|off|80|strict|pane [on|off]|check <text>|rewrite <text>]`
       };
     }
@@ -248,6 +281,7 @@ Commands:
   /asd strict         - Set to 100% Strict ASD-STE100 standard
   /asd pane           - Show the last answer as an STE document in a side pane
   /asd pane [on|off]  - Open the pane by itself after each answer, or not
+  /asd auto [on|off]  - Rewrite each answer as an ASD-STE100 document in the pane, or not
   /asd check <text>   - Lint text and inspect compliance score
   /asd rewrite <text> - Rewrite text into STE format
   /asd status         - Check current mode and settings`
@@ -314,7 +348,10 @@ Commands:
       await update($, view, () => ({ text: e.answer, original: e.answer, source: 'answer', isAsked: asked }));
       await update($, report, () => reportOf(e.answer));
       await update($, tab, () => 'view');
+      await update($, isRewriting, () => autoRewrite);
       if (paneAuto && !(await read($, paneOpen))) void openPane($);
+      // Rewrite after the turn ends, so the rewrite does not belong to the turn's dispatch
+      if (autoRewrite) $.clock.after(0, () => { void rewriteView($); });
     }
     return next(e);
   });
@@ -349,7 +386,7 @@ async function drawPaneFor($, e, els) {
     limitOf,
     isRewriting: await read($, isRewriting),
     onTab: (id) => update($, tab, () => id),
-    onRewrite: () => rewriteView($),
+    onRewrite: () => rewriteView($, true),
     onClose: () => $.ui.close({ id: PANE_ID })
   }, e.props.bodyColumns);
 }

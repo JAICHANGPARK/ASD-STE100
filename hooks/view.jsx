@@ -18,6 +18,7 @@ const SIGNAL = /^\s*(?:\*\*)?(WARNING|CAUTION|NOTE)(?:\*\*)?\s*:?\s*(?:\*\*)?\s*
 const SIGNAL_COLOR = { WARNING: 'red', CAUTION: 'yellow', NOTE: 'blue' };
 
 const plain = (text) => text
+  .replace(/`([^`]+)`/g, '$1')
   .replace(/\*\*([^*]+)\*\*/g, '$1')
   .replace(/(^|\W)[*_]([^*_]+)[*_](?=\W|$)/g, '$1$2')
   .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');

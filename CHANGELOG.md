@@ -3,6 +3,14 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+9] - 2026-10-02
+
+### Changed
+- **The STE pane shows each answer rewritten as an ASD-STE100 document**, not the same text as the transcript. After each answer, a small model (haiku) rewrites it with a title, headings, short paragraphs, one idea in each sentence, numbered steps and signal words. Use `/asd auto [on|off]`.
+- **The pane header shows the STE check score** of the text in view. It no longer says "Answer written in STE" without a check.
+- New pane key `o` shows the original answer. `r` rewrites the answer again.
+- Code names show without backticks in the pane.
+
 ## [2026.10.2+8] - 2026-10-02
 
 ### Fixed
@@ -94,6 +102,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+9]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B9
 [2026.10.2+8]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B8
 [2026.10.2+7]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B7
 [2026.10.2+6]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B6

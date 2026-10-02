@@ -73,6 +73,7 @@ Type `/` to see the `/asd` command:
 /asd 80             # Set to Karpathy's 80% Pragmatic Mode (recommended)
 /asd strict         # Set to 100% Strict ASD-STE100 Mode
 /asd pane           # Show the last answer as an STE document in a side pane
+/asd auto [on|off]  # Rewrite each answer as an STE document in the pane (default on)
 /asd check <text>   # Lint and score a sentence or paragraph
 /asd rewrite <text> # Rewrite any text into clean STE format
 /asd status         # Display active mode and status
@@ -85,16 +86,17 @@ STE mode is on by default: every answer is written in 80% ASD-STE100, and the ST
 
 ### STE pane
 
-After each answer, the STE pane opens beside the transcript. When you ask for ASD-STE100 (or turn on STE mode with `/asd on`), the pane shows the answer as an ASD-STE100 document:
+After each answer, the STE pane opens beside the transcript. A small model (haiku) rewrites the answer as an ASD-STE100 document, and the pane shows that STE version:
 
-- One sentence on each line. A sentence over the word limit shows its word count in red.
-- Numbered lines show as procedure steps.
-- **WARNING**, **CAUTION**, and **NOTE** show as signal blocks.
-- Unapproved words show in red, with the approved word after them (`utilize →USE`).
+- A title, and one heading for each topic. A maximum of 6 sentences in each paragraph.
+- One idea in each sentence. A sentence over the word limit shows its word count in red.
+- Procedures as numbered steps, with one command in each step.
+- **WARNING**, **CAUTION**, and **NOTE** as signal blocks.
+- Unapproved words in red, with the approved word after them (`utilize →USE`).
 
-For an answer that is not in STE, press `r` to rewrite it into STE.
+The header shows the STE check score of the text in view. Pane keys: `v` STE version, `o` original answer, `c` check (score and findings), `r` rewrite again, `x` close.
 
-Pane keys: `v` view, `c` check (score and findings), `r` rewrite an answer that is not in STE, `x` close. The pane docks beside the transcript in the fullscreen layout. Use `/asd pane` to open it, and `/asd pane off` to stop it from opening by itself.
+The rewrite costs one small model call for each answer. Use `/asd auto off` to stop it, and press `r` when you want a rewrite. The pane docks beside the transcript in the fullscreen layout. Use `/asd pane` to open it, and `/asd pane off` to stop it from opening by itself.
 
 The mod also gives Claude two tools: `mcp__asd-ste100__validate_ste` and `mcp__asd-ste100__rewrite_ste`.
 
