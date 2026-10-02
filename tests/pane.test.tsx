@@ -1,4 +1,5 @@
 import { expect, mock, test } from 'claude-code/testing'
+import { widthOf } from '../hooks/sheet.jsx'
 
 const STE_DOCUMENT = `# Replace the filter
 
@@ -227,5 +228,46 @@ test('the session record falls back to the transcript and a small model', async 
   const last = prompts[prompts.length - 1]
   expect(last).toContain('PERSON: Make an STE pane.')
   expect(await ui.find({ type: 'Text', text: /lite \(small model\)/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the rewrite names the language of the answer', async ($, on) => {
+  const { turn, clock, prompts } = setup(on, $)
+  await turn('Explain the filter', 'You should utilize the correct filter.')
+  await clock.advance(1)
+  expect(prompts[0]).toContain('Write the document in English')
+  await turn('필터를 설명해줘', '올바른 필터를 사용해야 합니다.')
+  await clock.advance(1)
+  expect(prompts[1]).toContain('Write the document in Korean')
+})
+
+test('Korean titles and tables keep the grid lines straight', async ($, on) => {
+  const doc = ['# 플러터 위젯 설명', '', '## 위젯 종류', '',
+    '| 종류 | 설명 |', '|---|---|',
+    '| StatelessWidget | 상태가 없는 위젯입니다. 입력값으로만 화면을 그립니다. |',
+    '| StatefulWidget | 상태 객체에 바뀌는 데이터를 저장합니다. |',
+  ].join(String.fromCharCode(10))
+  const { turn, clock } = setup(on, $, doc)
+  await turn('위젯을 설명해줘', '위젯은 화면의 부품입니다.')
+  await clock.advance(1)
+  const ui = await $.ui.mount({ plugin: 'asd-ste100', surface: 'terminal', ...pane(72) })
+  const tree: any = await ui.drawn()
+  const flat = (n: any): string => typeof n === 'string' ? n : (n.children || []).map(flat).join('')
+  const lines: string[] = []
+  const walk = (n: any) => {
+    if (typeof n === 'string') return
+    if (n.type === 'Text') { lines.push(flat(n)); return }
+    ;(n.children || []).forEach(walk)
+  }
+  walk(tree)
+  const header = lines.filter(l => /TASK|PAGE BLOCK|EFFECTIVITY|DESCRIPTION|플러터 위젯 설명|SCORE/.test(l))
+  expect(header.length).toBeGreaterThan(4)
+  for (const l of header) expect(widthOf(l)).toBe(72)
+  // Every line with box marks is the page width or the table width (the body indents a table by 3 cells)
+  for (const l of lines.filter(x => /^[│┌├╞└]/.test(x))) expect([72, 67]).toContain(widthOf(l))
+  const table = lines.filter(l => /^│/.test(l) && /종류|StatelessWidget|StatefulWidget|상태/.test(l))
+  expect(table.length).toBeGreaterThanOrEqual(3)
+  const widths = new Set(table.map(l => widthOf(l)))
+  expect(widths.size).toBe(1)
   await ui.unmount()
 })

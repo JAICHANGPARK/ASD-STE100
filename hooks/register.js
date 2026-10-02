@@ -58,9 +58,16 @@ Write in the language of the person's prompt, and apply these rules to that lang
 These rules apply even when the prompt asks for another form, for example "one long paragraph" or "a detailed essay". Give the same detail, but in this structure. The rules apply to your prose only, not to code, commands or file contents that you write with tools.`;
 
 // Ask the model for the answer as an ASD-STE100 document, for the pane
+// The language of a text by its script. The rewrite names it, as "the same language" alone let a model pick a wrong one.
+const langOf = (text) => (/[\uac00-\ud7a3]/.test(text) ? 'Korean'
+  : /[\u3040-\u30ff]/.test(text) ? 'Japanese'
+    : /[\u4e00-\u9fff]/.test(text) ? 'Chinese'
+      : 'English');
+let lastPromptLang = null; // The language of the person's last prompt, for the session record
+
 // Ask for a record of the whole session as an ASD-STE100 document
-const recordPrompt = (mode) => `Write a record of this whole conversation as an ASD-STE100 document in ${modeName(mode)}.
-Write the record in the language that the person used in the conversation, and apply the ASD-STE100 rules to that language.
+const recordPrompt = (mode, lang) => `Write a record of this whole conversation as an ASD-STE100 document in ${modeName(mode)}.
+Write the record in ${lang}. Apply the ASD-STE100 rules to ${lang}: short sentences, one idea in each sentence, the active voice, and simple, literal words.
 Use these sections, and leave out a section that has no content:
 - "## Purpose": what the person wanted.
 - "## Decisions": what the person and the assistant decided, and why.
@@ -91,8 +98,10 @@ async function makeRecord($, lite = false) {
   await update($, tab, () => 'session');
   let response = null;
   let source = lite ? 'lite' : 'fork';
+  const lastView = await read($, view);
+  const recordLang = lastPromptLang || (lastView ? langOf(lastView.original) : 'English');
   if (!lite) {
-    response = await $.model.fork({ prompt: recordPrompt(steMode) });
+    response = await $.model.fork({ prompt: recordPrompt(steMode, recordLang) });
     if (!response.isAnswered && response.reason !== 'aborted') source = 'lite';
   }
   if (source === 'lite') {
@@ -101,7 +110,7 @@ async function makeRecord($, lite = false) {
       ? await $.model.complete({
         model: 'haiku',
         system: buildSystemPrompt({ mode: steMode }),
-        prompt: `${recordPrompt(steMode)}\n\nThe conversation:\n\n${transcript}`,
+        prompt: `${recordPrompt(steMode, recordLang)}\n\nThe conversation:\n\n${transcript}`,
         maxTokens: 4000,
         timeoutMs: 120000
       })
@@ -121,7 +130,7 @@ async function makeRecord($, lite = false) {
 }
 
 const documentPrompt = (mode, text) => `Rewrite the text below as an ASD-STE100 document in ${modeName(mode)}.
-Write the document in the same language as the text. If the text is in Korean, write Korean. Apply the ASD-STE100 rules to that language: short sentences, one idea in each sentence, the active voice, and simple, literal words.
+Write the document in ${langOf(text)}, the language of the text. Do not translate it into another language. Apply the ASD-STE100 rules to ${langOf(text)}: short sentences, one idea in each sentence, the active voice, and simple, literal words.
 Follow these rules:
 ${documentRules(mode)}
 Output only the document.
@@ -399,6 +408,8 @@ Commands:
   // The answer is in STE when the person asks for it or STE mode is on
   on('prompt.submit', async ($, e, next) => {
     await update($, isAsked, () => steActive || STE_REQUEST.test(e.text));
+    // A slash command says nothing about the person's language
+    if (!e.text.trim().startsWith('/')) lastPromptLang = langOf(e.text);
     return next(e);
   });
 

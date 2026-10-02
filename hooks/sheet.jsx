@@ -50,8 +50,29 @@ export function findingsOf(report) {
   return [...rows.values()].sort((a, b) => rank[a.severity] - rank[b.severity] || b.count - a.count);
 }
 
-export const clip = (text, n) => (text.length > n ? `${text.slice(0, Math.max(0, n - 1))}…` : text);
-const pad = (text, n) => clip(text, n).padEnd(n);
+// Terminal cells of a character: 2 for Hangul, CJK, full-width forms and emoji, else 1
+const WIDE = /[\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
+const cellsOf = (ch) => (WIDE.test(ch) || ch.codePointAt(0) > 0xffff ? 2 : 1);
+
+// Terminal cells of a text
+export const widthOf = (text) => Array.from(text).reduce((n, ch) => n + cellsOf(ch), 0);
+
+// The text cut to at most n cells, with … when it is cut
+export const clip = (text, n) => {
+  if (widthOf(text) <= n) return text;
+  let out = '';
+  let used = 0;
+  for (const ch of Array.from(text)) {
+    if (used + cellsOf(ch) > n - 1) break;
+    out += ch;
+    used += cellsOf(ch);
+  }
+  return `${out}…`;
+};
+
+// The text filled with spaces to n cells
+export const padTo = (text, n) => text + ' '.repeat(Math.max(0, n - widthOf(text)));
+const pad = (text, n) => padTo(clip(text, n), n);
 
 // The longest sentences as bars, with the limit marked
 export function lengthRows({ h, Text }, report, limitOf, barWidth) {

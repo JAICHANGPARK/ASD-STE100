@@ -10,7 +10,7 @@
  */
 
 import { validateText } from '../lib/ste-engine.js';
-import { clip, findingRows, findingsOf, lengthRows, proseOf } from './sheet.jsx';
+import { clip, findingRows, findingsOf, lengthRows, proseOf, widthOf } from './sheet.jsx';
 import { blocksOf, manualRows, titleOf, viewRows } from './view.jsx';
 
 export const PANE_ID = 'ste-sheet';
@@ -89,7 +89,7 @@ function gridRow({ h, Text }, key, cells, widths) {
     const room = widths[i] - 2;
     const lab = label ? `${label} ` : '';
     const val = clip(String(value), Math.max(1, room - lab.length));
-    parts.push(<Text key={`c${i}`}>{' '}<Text dimColor>{lab}</Text><Text {...style}>{val}</Text>{' '.repeat(Math.max(0, room - lab.length - val.length))}{' '}</Text>);
+    parts.push(<Text key={`c${i}`}>{' '}<Text dimColor>{lab}</Text><Text {...style}>{val}</Text>{' '.repeat(Math.max(0, room - lab.length - widthOf(val)))}{' '}</Text>);
     parts.push(<Text key={`s${i}`} dimColor>│</Text>);
   });
   return <Text key={key} wrap="truncate-end">{parts}</Text>;

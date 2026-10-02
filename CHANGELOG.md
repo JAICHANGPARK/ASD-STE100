@@ -3,6 +3,12 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+20] - 2026-10-02
+
+### Fixed
+- **The STE version could come out in a wrong language** (for example Bengali for an English answer). The rewrite and the session record now name the language: Korean, Japanese, Chinese or English, from the script of the text.
+- **Grid and table lines stay straight with Korean, Chinese and Japanese text.** The pane measured text in characters, but these characters take two terminal cells. It now measures in cells.
+
 ## [2026.10.2+19] - 2026-10-02
 
 ### Added
@@ -157,6 +163,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+20]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B20
 [2026.10.2+19]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B19
 [2026.10.2+18]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B18
 [2026.10.2+17]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B17

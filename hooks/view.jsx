@@ -10,6 +10,7 @@
  */
 
 import { validateText } from '../lib/ste-engine.js';
+import { padTo, widthOf } from './sheet.jsx';
 
 // Words that ask for an ASD-STE100 answer
 export const STE_REQUEST = /asd[- ]?ste|ste[- ]?100|simplified technical english|\bSTE\b|karpathy/i;
@@ -99,14 +100,23 @@ export function blocksOf(answer) {
 function wrapCell(text, width) {
   const lines = [];
   let line = '';
+  const cut = (word) => {
+    let head = '';
+    for (const ch of Array.from(word)) {
+      if (widthOf(head + ch) > width) break;
+      head += ch;
+    }
+    return head || Array.from(word)[0];
+  };
   for (let word of text.split(/\s+/).filter(Boolean)) {
-    while (word.length > width) {
+    while (widthOf(word) > width) {
       if (line) { lines.push(line); line = ''; }
-      lines.push(word.slice(0, width));
-      word = word.slice(width);
+      const head = cut(word);
+      lines.push(head);
+      word = word.slice(head.length);
     }
     if (!line) line = word;
-    else if (line.length + 1 + word.length <= width) line += ' ' + word;
+    else if (widthOf(line) + 1 + widthOf(word) <= width) line += ' ' + word;
     else { lines.push(line); line = word; }
   }
   if (line || lines.length === 0) lines.push(line);
@@ -139,7 +149,7 @@ function tableRows(els, key, lines, width) {
     .map(line => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => plain(c.trim())));
   const n = Math.max(...rows.map(r => r.length));
   rows.forEach(r => { while (r.length < n) r.push(''); });
-  const natural = Array.from({ length: n }, (_, i) => Math.max(3, ...rows.map(r => r[i].length)));
+  const natural = Array.from({ length: n }, (_, i) => Math.max(3, ...rows.map(r => widthOf(r[i]))));
   const widths = fitColumns(natural, Math.max(n * 3, width - (n + 1) - 2 * n));
   const line = (k, [l, c, r]) => <Text key={k} dimColor>{l + widths.map(w => '─'.repeat(w + 2)).join(c) + r}</Text>;
   const out = [line(`${key}-top`, ['┌', '┬', '┐'])];
@@ -149,7 +159,7 @@ function tableRows(els, key, lines, width) {
     for (let li = 0; li < height; li++) {
       const parts = [<Text key="b0" dimColor>│</Text>];
       cells.forEach((c, i) => {
-        const text = (c[li] || '').padEnd(widths[i]);
+        const text = padTo(c[li] || '', widths[i]);
         parts.push(<Text key={`c${i}`} bold={ri === 0} color={ri === 0 ? 'cyan' : undefined}>{` ${text} `}</Text>);
         parts.push(<Text key={`b${i + 1}`} dimColor>│</Text>);
       });
