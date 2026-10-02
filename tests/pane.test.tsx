@@ -50,7 +50,7 @@ test('an answer asked in ASD-STE100 shows as an STE document', async ($, on) => 
   }
 })
 
-test('r rewrites an answer that is not in STE', async ($, on) => {
+test('r rewrites an answer that is not in STE', { options: { autoInject: false } }, async ($, on) => {
   const turn = setup(on, $)
   on('model.complete', () => ({ value: { isAnswered: true, text: 'Use the correct filter.', usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 } } }) as never)
   await turn('How do I replace the filter?', 'You should utilize the correct filter prior to commencing operation.')
