@@ -1,6 +1,6 @@
 {
   "name": "asd-ste100",
-  "version": "2026.10.2+6",
+  "version": "2026.10.2+7",
   "description": "ASD-STE100 (Simplified Technical English) and 80% Karpathy Mode plugin, mod, and skill for Claude Code. Enforces clean, unambiguous technical explanations.",
   "author": {
     "name": "Dreamwalker"
@@ -31,7 +31,7 @@
     "autoInject": {
       "title": "Auto Inject STE Guidelines",
       "type": "boolean",
-      "description": "Automatically append STE guidelines to all user prompts (STE mode on). /asd off turns it off.",
+      "description": "Add the STE rules to the system prompt (STE mode on). /asd off turns it off.",
       "default": true
     }
   },

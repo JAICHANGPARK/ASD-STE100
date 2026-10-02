@@ -23,7 +23,7 @@ Former OpenAI Chief Scientist and Tesla AI Director **Andrej Karpathy** highligh
 > — [Andrej Karpathy on X](https://x.com/karpathy/status/2105819303471976479)
 
 This repository packages **ASD-STE100** into a complete ecosystem:
-1. **Claude Code Mod (`hooks/register.js`)**: An internal Claude Code extension that adds `/asd` commands, UI status indicators, and automatic prompt rewriting.
+1. **Claude Code Mod (`hooks/register.js`)**: An internal Claude Code extension that adds `/asd` commands, UI status indicators, the STE pane, and STE rules in the system prompt.
 2. **Claude Code Plugin (`.claude-plugin/plugin.json`)**: Installable plugin compliant with the new Claude Code plugin architecture.
 3. **Agent Skill (`skills/asd-ste100/SKILL.md`)**: A rich skill loaded by Claude Code, Google Antigravity, and other coding assistants.
 4. **Core Rule Engine & Linter (`lib/ste-engine.js`)**: Checks sentence and paragraph length, passive voice (with the Issue 9 descriptive-text exception), verb forms, multi-word nouns, unapproved words, phrasal verbs, semicolons, contractions, and Latin abbreviations. It uses lightweight heuristics (no part-of-speech tagging) and a curated word list, not the official ~900-word dictionary.
@@ -35,7 +35,7 @@ This repository packages **ASD-STE100** into a complete ecosystem:
 
 ### 1. Install as a Claude Code Plugin
 
-**Requirements:** Claude Code **v2.1.287 or later** for the mod (`/asd` command, tools, prompt directive, spinner indicator). Run `claude --version` to check. The skill works on any version that supports plugins.
+**Requirements:** Claude Code **v2.1.287 or later** for the mod (`/asd` command, tools, STE pane, system prompt rules, spinner indicator). Run `claude --version` to check. The skill works on any version that supports plugins.
 
 This repository is its own plugin marketplace. Install it from GitHub:
 

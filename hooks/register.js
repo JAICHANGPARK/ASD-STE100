@@ -32,9 +32,6 @@ const limitOf = (sentence) => (sentence.isProcedural && steMode === 'strict' ? 2
 
 const modeLabel = () => (steMode === 'strict' ? 'STRICT 100%' : 'PRAGMATIC 80%');
 const modeName = (mode) => (mode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100 (Karpathy Pragmatic Mode)');
-const lengthRule = (mode) => (mode === 'strict'
-  ? 'procedural sentences <= 20 words, descriptive sentences <= 25 words'
-  : 'sentences <= 25 words');
 
 // Ask the model for the rewritten text only, without commentary
 const rewritePrompt = (mode, text) =>
@@ -154,7 +151,7 @@ export function register(on, options = {}) {
       steActive = true;
       await $.store.set('ste_active', true);
       refreshUi($);
-      return { text: `[ASD-STE100] Activated. Mode: ${modeLabel()}. Each prompt now asks Claude to answer in ${modeName(steMode)}. Use /asd 80 or /asd strict to change the mode.` };
+      return { text: `[ASD-STE100] Activated. Mode: ${modeLabel()}. Claude now answers in ${modeName(steMode)}. Use /asd 80 or /asd strict to change the mode.` };
     }
 
     if (sub === 'off') {
@@ -278,26 +275,23 @@ Commands:
     return { result: response && response.isAnswered ? response.text.trim() : 'Rewriting failed or model timed out.' };
   });
 
-  // Automatically attach STE directive to prompts if active
+  // The answer is in STE when the person asks for it or STE mode is on
   on('prompt.submit', async ($, e, next) => {
-    // The answer is in STE when the person asks for it or STE mode is on
     await update($, isAsked, () => steActive || STE_REQUEST.test(e.text));
+    return next(e);
+  });
 
-    if (!steActive) {
-      return next(e);
-    }
-
-    const directive = `\n\n[ASD-STE100 Formatting Directive]: Write all technical explanations in ${modeName(steMode)} (${lengthRule(steMode)}, active voice, 1 idea per sentence, clear direct vocabulary without filler).`;
-
-    // Check if user already explicitly included STE instructions
-    if (/asd-ste100|simplified technical english|ste100/i.test(e.text)) {
-      return next(e);
-    }
-
-    return next({
-      ...e,
-      text: e.text + directive
-    });
+  // While STE mode is on, add the STE rules to the system prompt. The person's prompt stays as typed.
+  on('prompt.compose', async ($, e, next) => {
+    const composed = await next(e);
+    if (!steActive) return composed;
+    return {
+      ...composed,
+      sections: [
+        ...composed.sections,
+        { id: 'asd-ste100:directive', text: buildSystemPrompt({ mode: steMode }), scope: 'session' }
+      ]
+    };
   });
 
   // Enhance spinner while thinking if STE is active
@@ -332,17 +326,30 @@ Commands:
 
   // Draw the STE pane
   on('ui.render', { component: 'Pane', requestId: 'ste-sheet' }, async ($, e) => {
-    return drawPane({ h, ...$.ui.resolve(e) }, {
-      view: await read($, view),
-      report: await read($, report),
-      tab: await read($, tab),
-      mode: steMode,
-      modeLabel: modeLabel(),
-      limitOf,
-      isRewriting: await read($, isRewriting),
-      onTab: (id) => update($, tab, () => id),
-      onRewrite: () => rewriteView($),
-      onClose: () => $.ui.close({ id: PANE_ID })
-    }, e.props.bodyColumns);
+    const els = { h, ...$.ui.resolve(e) };
+    try {
+      return await drawPaneFor($, e, els);
+    } catch (err) {
+      // Show the error in the pane, not an empty pane
+      const { Box, Text } = els;
+      return h(Box, { flexDirection: 'column' },
+        h(Text, { color: 'red' }, 'The STE pane could not draw this answer.'),
+        h(Text, { dimColor: true }, String((err && err.message) || err)));
+    }
   });
+}
+
+async function drawPaneFor($, e, els) {
+  return drawPane(els, {
+    view: await read($, view),
+    report: await read($, report),
+    tab: await read($, tab),
+    mode: steMode,
+    modeLabel: modeLabel(),
+    limitOf,
+    isRewriting: await read($, isRewriting),
+    onTab: (id) => update($, tab, () => id),
+    onRewrite: () => rewriteView($),
+    onClose: () => $.ui.close({ id: PANE_ID })
+  }, e.props.bodyColumns);
 }

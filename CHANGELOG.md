@@ -3,6 +3,12 @@
 All notable changes to this project are listed in this file.
 Versions use the release date (`YYYY.M.D`).
 
+## [2026.10.2+7] - 2026-10-02
+
+### Fixed
+- **The STE directive no longer shows in your prompt.** STE mode now adds the STE rules to the system prompt. Your prompt stays as you typed it.
+- **The STE pane shows an error message** when it cannot draw an answer, not an empty pane.
+
 ## [2026.10.2+6] - 2026-10-02
 
 ### Changed
@@ -83,6 +89,7 @@ Releases now use the date and a build number. This is build 3 of 2026-10-02 (202
 ### Added
 - First release: the Claude Code mod (`/ste` command, `validate_ste` and `rewrite_ste` tools, prompt directive, spinner indicator), the `asd-ste100` agent skill, the rule engine and linter, the CLI, and examples.
 
+[2026.10.2+7]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B7
 [2026.10.2+6]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B6
 [2026.10.2+5]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B5
 [2026.10.2+4]: https://github.com/JAICHANGPARK/ASD-STE100/releases/tag/asd-ste100--v2026.10.2%2B4
