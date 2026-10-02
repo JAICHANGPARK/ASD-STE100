@@ -1,6 +1,6 @@
 ---
 name: asd-ste100
-description: Explains, drafts, reviews, and validates technical documentation and LLM outputs in ASD-STE100 (Simplified Technical English) or Karpathy's 80% Pragmatic Mode. Enforces short sentences, active voice, controlled vocabulary, and high cognitive parseability.
+description: Explains, drafts, reviews, and validates technical documentation and LLM outputs in ASD-STE100 (Simplified Technical English) or Karpathy's 80% Pragmatic Mode. Enforces short sentences, active voice, controlled vocabulary, and high cognitive parseability. Use when the user asks for ASD-STE100, STE, Simplified Technical English, "80% STE", Karpathy-style writing, or a clean low-cognitive-load explanation, or asks to lint or rewrite docs for passive voice, long sentences, or vague words.
 ---
 
 # ASD-STE100: Simplified Technical English & 80% Pragmatic Mode
@@ -46,6 +46,8 @@ ASD-STE100 was created by aerospace manufacturers (ASD, formerly AECMA) to elimi
 
 ## 3. The 9 Core Rules of ASD-STE100
 
+The rule numbers below match the rule labels in the `/ste check` linter report.
+
 ### Rule 1: One Word, One Meaning (Approved Vocabulary)
 Do not use different words for the same concept, and do not use unapproved words:
 - **Use** (not *utilize*)
@@ -61,9 +63,10 @@ Do not use different words for the same concept, and do not use unapproved words
 - **To** (not *in order to*, *for the purpose of*)
 
 ### Rule 2: Sentence Length Limits
-- **Procedural (Instructions):** Maximum **20 words**.
-- **Descriptive (Explanations):** Maximum **25 words**.
-- If a sentence exceeds 25 words, split it into two sentences immediately.
+- **Strict, procedural (Instructions):** Maximum **20 words**.
+- **Strict, descriptive (Explanations):** Maximum **25 words**.
+- **80% Pragmatic:** Target 15–22 words. Hard cap of **25 words** for all sentences.
+- If a sentence exceeds its limit, split it into two sentences immediately.
 
 ### Rule 3: One Thought per Sentence
 Do not combine independent instructions or unrelated facts with semicolons or multiple coordinating conjunctions.
@@ -99,7 +102,7 @@ ASD-STE100 permits only:
 1. **Present simple** (*The process writes to disk.*)
 2. **Past simple** (*The system sent the packet.*)
 3. **Future simple with 'will'** (*The service will restart.*)
-Avoid present perfect (*has processed*), continuous progressive (*is running* -> use *runs*), and conditional subjunctives.
+Avoid present perfect (*has processed*), continuous progressive (*is running* -> use *runs*), and conditional subjunctives. The linter flags these tenses in strict mode only.
 
 ### Rule 9: Tabulate and Format Multi-Item Information
 Whenever there are more than two conditions or items, present them in a bulleted list or a table rather than an inline paragraph.

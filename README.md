@@ -15,7 +15,7 @@ As AI coding and autonomous agents perform more legwork, human engineers spend s
 
 Former OpenAI Chief Scientist and Tesla AI Director **Andrej Karpathy** highlighted this paradigm shift:
 
-> *"Writing. Something I've had success with: **Ask your LLM to explain something in ASD-STE100**, it's a controlled language specification originally developed for aerospace maintenance documentation. LLMs well-versed in this language and it comes with heavy constraints on clean writing style that I often find a lot more readable. Sometimes I've tried to soften it a bit e.g. ask for **'80% of the way to ASD-STE100'** because the spec is quite stringent...*
+> *"Writing. Something I've had success with: **Ask your LLM to explain something in ASD-STE100**, it's a controlled language specification originally developed for aerospace maintenance documentation. LLMs are well-versed in this language and it comes with heavy constraints on clean writing style that I often find a lot more readable. Sometimes I've tried to soften it a bit e.g. ask for **'80% of the way to ASD-STE100'** because the spec is quite stringent...*
 >
 > *In summary:*
 > - *As LLMs get better, they will do more and more of the legwork autonomously, and a lot more of our work will rise up the abstractions into oversight and understanding.*
@@ -26,26 +26,47 @@ This repository packages **ASD-STE100** into a complete ecosystem:
 1. **Claude Code Mod (`hooks/register.js`)**: An internal Claude Code extension that adds `/ste` commands, UI status indicators, and automatic prompt rewriting.
 2. **Claude Code Plugin (`.claude-plugin/plugin.json`)**: Installable plugin compliant with the new Claude Code plugin architecture.
 3. **Agent Skill (`skills/asd-ste100/SKILL.md`)**: A rich skill loaded by Claude Code, Google Antigravity, and other coding assistants.
-4. **Core Rule Engine & Linter (`lib/ste-engine.js`)**: Evaluates sentence length, passive voice, noun clusters, and unapproved vocabulary with precision.
+4. **Core Rule Engine & Linter (`lib/ste-engine.js`)**: Checks sentence length, passive voice, verb tenses, noun clusters, and unapproved vocabulary with lightweight heuristics (no part-of-speech tagging).
 5. **Standalone CLI (`bin/ste.js`)**: Lint text files or format system prompts directly from your terminal.
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Run as a Claude Code Mod / Plugin
+### 1. Install as a Claude Code Plugin
 
-To load this mod in your Claude Code session:
+**Requirements:** Claude Code **v2.1.287 or later** for the mod (`/ste` command, tools, prompt directive, spinner indicator). Run `claude --version` to check. The skill works on any version that supports plugins.
+
+This repository is its own plugin marketplace. Install it from GitHub:
 
 ```bash
-# Load for a single session:
-claude --plugin-dir /path/to/ASD-STE100
-
-# Or install as a local plugin:
-claude plugin install /path/to/ASD-STE100
+claude plugin marketplace add JAICHANGPARK/ASD-STE100
+claude plugin install asd-ste100@asd-ste100
 ```
 
-Once loaded in Claude Code, type `/` to see the new `/ste` command:
+Or, inside a Claude Code session:
+
+```text
+/plugin marketplace add JAICHANGPARK/ASD-STE100
+/plugin install asd-ste100@asd-ste100
+/reload-plugins
+```
+
+To try it for one session without installing (for example, from a local clone):
+
+```bash
+claude --plugin-dir /path/to/ASD-STE100
+```
+
+To update later, run `claude plugin update asd-ste100@asd-ste100`.
+
+> **Older Claude Code (v2.1.286 and earlier):** mods were early access. The skill loads, but the mod prints `hooks module not loaded` and `/ste` does not exist. Update Claude Code, or start it with `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1`. Remove that variable after you update.
+
+To see what the mod hooks and calls before you install it, run `claude plugin validate .` in a clone.
+
+### 2. Use the `/ste` Command (Mod)
+
+Type `/` to see the `/ste` command:
 
 ```text
 /ste on             # Activate automatic STE prompt enhancement
@@ -57,14 +78,20 @@ Once loaded in Claude Code, type `/` to see the new `/ste` command:
 /ste off            # Deactivate STE mode
 ```
 
+`/ste on`, `/ste 80`, `/ste strict`, and `/ste off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
+
+The mod also gives Claude two tools: `mcp__asd-ste100__validate_ste` and `mcp__asd-ste100__rewrite_ste`.
+
 When active, Claude Code displays a live indicator beside the spinner:
 ```text
 Thinking · STE [PRAGMATIC 80%]…
 ```
 
+The indicator appears in the terminal and in the Desktop app. In `claude -p` and the VS Code chat panel, the hooks run, but nothing is drawn.
+
 ---
 
-### 2. Run as a Standalone Terminal CLI
+### 3. Run as a Standalone Terminal CLI
 
 ```bash
 # Lint a piece of text:
@@ -76,10 +103,10 @@ Thinking · STE [PRAGMATIC 80%]…
 # ========================================
 # Score: 68 / 100
 # Issues:
-#  - [UNAPPROVED_WORD] "prior to" -> use "before"
-#  - [UNAPPROVED_WORD] "should" -> use "must"
-#  - [UNAPPROVED_WORD] "utilize" -> use "use"
-#  - [UNAPPROVED_WORD] "commencing" -> use "starting"
+#  - [UNAPPROVED_WORD] "prior to" is unapproved in ASD-STE100. Use "before" instead.
+#  - [UNAPPROVED_WORD] "should" is unapproved in ASD-STE100. Use "must (or explain optional choice)" instead.
+#  - [UNAPPROVED_WORD] "utilize" is unapproved in ASD-STE100. Use "use" instead.
+#  - [UNAPPROVED_WORD] "commencing" is unapproved in ASD-STE100. Use "starting" instead.
 
 # Generate system prompt instructions for any LLM:
 ./bin/ste.js prompt --diagram
@@ -87,10 +114,12 @@ Thinking · STE [PRAGMATIC 80%]…
 
 ---
 
-### 3. Use as an Agent Skill in Antigravity or Claude
+### 4. Use as an Agent Skill in Antigravity or Claude
 
 The skill file is located at:
 `skills/asd-ste100/SKILL.md`
+
+After you install the plugin, Claude Code loads the skill as `asd-ste100:asd-ste100`. Claude uses it automatically when a request matches, or you can call it with `/asd-ste100:asd-ste100`.
 
 Whenever you want an agent to explain or rewrite technical logic, simply ask:
 > *"Explain the architecture of our authentication service in 80% ASD-STE100 with a Mermaid diagram."*
@@ -127,7 +156,8 @@ Andrej Karpathy emphasized expanding beyond plain text into high-abstraction art
 ```text
 ASD-STE100/
 ├── .claude-plugin/
-│   └── plugin.json            # Claude Code Plugin Manifest
+│   ├── plugin.json            # Claude Code Plugin Manifest
+│   └── marketplace.json       # Marketplace entry (install from GitHub)
 ├── hooks/
 │   ├── hooks.json             # Mod Hook configuration
 │   └── register.js            # Claude Code Mod implementation (/ste command, UI, tools)
@@ -156,21 +186,6 @@ Run the automated test suite:
 
 ```bash
 npm test
-```
-
----
-
-## 📤 Push to GitHub
-
-To push this repository to your GitHub account:
-
-```bash
-cd /path/to/ASD-STE100
-git add .
-git commit -m "feat: initial release of ASD-STE100 Claude mod and skill"
-git branch -M main
-git remote add origin https://github.com/<YOUR_USERNAME>/ASD-STE100.git
-git push -u origin main
 ```
 
 ---

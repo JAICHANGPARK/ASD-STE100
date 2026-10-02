@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { validateText, buildSystemPrompt } from '../lib/ste-engine.js';
 import fs from 'fs';
-import path from 'path';
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -42,18 +41,19 @@ if (command === 'prompt') {
 
 if (command === 'check') {
   const isStrict = args.includes('--strict');
-  const targetIndex = args.findIndex((a, idx) => idx > 0 && !a.startsWith('--'));
-  
-  if (targetIndex === -1) {
+  // Join all non-flag arguments so unquoted text is checked in full
+  const targets = args.slice(1).filter(a => !a.startsWith('--'));
+
+  if (targets.length === 0) {
     console.error('Error: Please provide text or a file path to check.');
     console.error('Example: asd-ste100 check "You should utilize this script."');
     process.exit(1);
   }
 
-  let textToCheck = args[targetIndex];
-  
-  // If argument is an existing file, read it
-  if (fs.existsSync(textToCheck)) {
+  let textToCheck = targets.join(' ');
+
+  // If the single argument is an existing file, read it
+  if (targets.length === 1 && fs.existsSync(textToCheck) && fs.statSync(textToCheck).isFile()) {
     try {
       textToCheck = fs.readFileSync(textToCheck, 'utf8');
     } catch (err) {

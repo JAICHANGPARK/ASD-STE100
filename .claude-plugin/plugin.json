@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "ASD-STE100 (Simplified Technical English) and 80% Karpathy Mode plugin, mod, and skill for Claude Code. Enforces clean, unambiguous technical explanations.",
   "author": {
-    "name": "Antigravity AI"
+    "name": "Dreamwalker"
   },
   "keywords": [
     "asd-ste100",
@@ -21,7 +21,11 @@
       "title": "Default STE Mode",
       "type": "string",
       "description": "Default STE mode: 'pragmatic' (80% Karpathy mode) or 'strict' (100% ASD-STE100)",
-      "default": "pragmatic"
+      "default": "pragmatic",
+      "options": [
+        "pragmatic",
+        "strict"
+      ]
     },
     "autoInject": {
       "title": "Auto Inject STE Guidelines",
@@ -29,5 +33,7 @@
       "description": "Automatically append STE guidelines to all user prompts when active",
       "default": false
     }
-  }
+  },
+  "homepage": "https://github.com/JAICHANGPARK/ASD-STE100",
+  "repository": "https://github.com/JAICHANGPARK/ASD-STE100"
 }

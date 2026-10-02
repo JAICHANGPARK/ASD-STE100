@@ -21,6 +21,10 @@
     "skills",
     "technical-writing"
   ],
-  "author": "Antigravity AI",
-  "license": "MIT"
+  "author": "Dreamwalker",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JAICHANGPARK/ASD-STE100.git"
+  }
 }

@@ -13,8 +13,24 @@ import { validateText, buildSystemPrompt } from '../lib/ste-engine.js';
 let steActive = false;
 let steMode = 'pragmatic'; // 'pragmatic' (80% Karpathy mode) or 'strict' (100% ASD-STE100)
 
+const modeLabel = () => (steMode === 'strict' ? 'STRICT 100%' : 'PRAGMATIC 80%');
+const modeName = (mode) => (mode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100 (Karpathy Pragmatic Mode)');
+const lengthRule = (mode) => (mode === 'strict'
+  ? 'procedural sentences <= 20 words, descriptive sentences <= 25 words'
+  : 'sentences <= 25 words');
+
+// Ask the model for the rewritten text only, without commentary
+const rewritePrompt = (mode, text) =>
+  `Rewrite the following text into ${modeName(mode)}. Output only the rewritten text. Do not add headings, explanations, or notes.\n\n${text}`;
+
+// Show the current state in the status line and redraw the spinner suffix
+function refreshUi($) {
+  $.ui.status(steActive ? `STE [${modeLabel()}]: Active` : '');
+  $.ui.invalidate('ui.render');
+}
+
 export function register(on, options = {}) {
-  // Read userConfig defaults if provided
+  // userConfig values are defaults. A mode or state saved with /ste (machine-wide $.store) overrides them.
   if (options.defaultMode === 'strict') {
     steMode = 'strict';
   }
@@ -64,9 +80,7 @@ export function register(on, options = {}) {
       const savedMode = await $.store.get('ste_mode');
       if (savedMode === 'strict' || savedMode === 'pragmatic') steMode = savedMode;
 
-      if (steActive) {
-        $.ui.status(`STE [${steMode.toUpperCase()}]: Active`);
-      }
+      if (steActive) refreshUi($);
     } catch (err) {
       // Avoid failing session start if registration encounters issues
       $.ui.log(`ASD-STE100 mod initialization notice: ${err.message}`);
@@ -78,21 +92,22 @@ export function register(on, options = {}) {
   // Handle /ste command
   on('command.run', { command: 'ste' }, async ($, e) => {
     const rawArgs = (e.args || '').trim();
-    const parts = rawArgs.split(/\s+/);
-    const sub = (parts[0] || '').toLowerCase();
-    const rest = parts.slice(1).join(' ').trim();
+    const first = rawArgs.split(/\s+/)[0] || '';
+    const sub = first.toLowerCase();
+    // Keep the original line breaks of the text after the subcommand
+    const rest = rawArgs.slice(first.length).trim();
 
     if (sub === 'on') {
       steActive = true;
       await $.store.set('ste_active', true);
-      $.ui.status(`STE [${steMode.toUpperCase()}]: Active`);
-      return { text: `[ASD-STE100] Activated. Mode: ${steMode.toUpperCase()} (80% Karpathy style by default). All LLM responses will follow controlled language guidelines.` };
+      refreshUi($);
+      return { text: `[ASD-STE100] Activated. Mode: ${modeLabel()}. Each prompt now asks Claude to answer in ${modeName(steMode)}. Use /ste 80 or /ste strict to change the mode.` };
     }
 
     if (sub === 'off') {
       steActive = false;
       await $.store.set('ste_active', false);
-      $.ui.status('');
+      refreshUi($);
       return { text: '[ASD-STE100] Deactivated. Standard generation resumed.' };
     }
 
@@ -101,7 +116,7 @@ export function register(on, options = {}) {
       steActive = true;
       await $.store.set('ste_mode', 'pragmatic');
       await $.store.set('ste_active', true);
-      $.ui.status('STE [PRAGMATIC 80%]: Active');
+      refreshUi($);
       return { text: '[ASD-STE100] Switched to 80% Pragmatic Mode (Karpathy style): short punchy sentences (<=25 words), active voice, 1 idea/sentence, clean modern vocabulary.' };
     }
 
@@ -110,7 +125,7 @@ export function register(on, options = {}) {
       steActive = true;
       await $.store.set('ste_mode', 'strict');
       await $.store.set('ste_active', true);
-      $.ui.status('STE [STRICT 100%]: Active');
+      refreshUi($);
       return { text: '[ASD-STE100] Switched to 100% Strict Mode (Full ASD-STE100 Issue 8): max 20 words for procedural, max 25 for descriptive, strict approved vocabulary tables, zero passive voice.' };
     }
 
@@ -118,7 +133,7 @@ export function register(on, options = {}) {
       return {
         text: `[ASD-STE100 Status]
 - State: ${steActive ? 'ACTIVE (automatically formatting prompts)' : 'INACTIVE'}
-- Mode: ${steMode.toUpperCase()} (${steMode === 'strict' ? '100% Strict Standard' : '80% Karpathy Pragmatic Mode'})
+- Mode: ${modeLabel()}
 - Commands: /ste [on|off|80|strict|check <text>|rewrite <text>]`
       };
     }
@@ -128,7 +143,7 @@ export function register(on, options = {}) {
         return { text: 'Usage: /ste check <text to analyze>' };
       }
       const report = validateText(rest, { mode: steMode });
-      let output = `[ASD-STE100 Quality Report - ${steMode.toUpperCase()}]\nScore: ${report.score}/100 | Sentences: ${report.totalSentences} | Avg Words: ${report.averageWordsPerSentence} | Issues: ${report.totalIssues}\n`;
+      let output = `[ASD-STE100 Quality Report - ${modeLabel()}]\nScore: ${report.score}/100 | Sentences: ${report.totalSentences} | Avg Words: ${report.averageWordsPerSentence} | Issues: ${report.totalIssues}\n`;
       report.sentences.forEach(s => {
         const icon = s.issues.length === 0 ? '✔' : '⚠';
         output += `\n${icon} [S${s.index} (${s.wordCount} words)]: "${s.text}"\n`;
@@ -148,13 +163,13 @@ export function register(on, options = {}) {
       const response = await $.model.complete({
         model: 'haiku',
         system: systemInstruction,
-        prompt: `Rewrite the following text into ${steMode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100 (Karpathy mode)'}:\n\n${rest}`,
+        prompt: rewritePrompt(steMode, rest),
         maxTokens: 1000,
         timeoutMs: 30000
       });
 
       if (response && response.isAnswered) {
-        return { text: `[Rewritten in ASD-STE100 (${steMode.toUpperCase()})]:\n\n${response.text.trim()}` };
+        return { text: `[Rewritten in ASD-STE100 (${modeLabel()})]:\n\n${response.text.trim()}` };
       }
       return { text: `Could not rewrite via model. Validation report for original text:\n` + JSON.stringify(validateText(rest, { mode: steMode }), null, 2) };
     }
@@ -189,8 +204,9 @@ Commands:
     const response = await $.model.complete({
       model: 'haiku',
       system,
-      prompt: `Rewrite the following into ${mode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100'}:\n\n${e.text}`,
-      maxTokens: 1500
+      prompt: rewritePrompt(mode, e.text || ''),
+      maxTokens: 1500,
+      timeoutMs: 30000
     });
     return { result: response && response.isAnswered ? response.text.trim() : 'Rewriting failed or model timed out.' };
   });
@@ -201,8 +217,8 @@ Commands:
       return next(e);
     }
 
-    const directive = `\n\n[ASD-STE100 Formatting Directive]: Please provide all technical explanations in ${steMode === 'strict' ? 'Strict ASD-STE100' : '80% ASD-STE100 (Karpathy Pragmatic Mode)'} (short sentences <= 25 words, active voice, 1 idea/sentence, clear direct vocabulary without filler).`;
-    
+    const directive = `\n\n[ASD-STE100 Formatting Directive]: Write all technical explanations in ${modeName(steMode)} (${lengthRule(steMode)}, active voice, 1 idea per sentence, clear direct vocabulary without filler).`;
+
     // Check if user already explicitly included STE instructions
     if (/asd-ste100|simplified technical english|ste100/i.test(e.text)) {
       return next(e);
@@ -217,7 +233,7 @@ Commands:
   // Enhance spinner while thinking if STE is active
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
     if (!steActive) return next(e);
-    const suffix = ` · STE [${steMode.toUpperCase()}]`;
+    const suffix = ` · STE [${modeLabel()}]`;
     return next({
       ...e,
       props: {

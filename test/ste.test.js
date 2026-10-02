@@ -4,6 +4,7 @@ import {
   detectUnapprovedWords,
   detectPassiveVoice,
   detectNounClusters,
+  splitSentences,
   buildSystemPrompt
 } from '../lib/ste-engine.js';
 
@@ -44,5 +45,38 @@ const prompt80 = buildSystemPrompt({ mode: 'pragmatic', targetFormat: 'diagram' 
 assert(prompt80.includes('80% ASD-STE100'));
 assert(prompt80.includes('Mermaid'));
 console.log('✔ Prompt builder passed');
+
+// Test 7: Unapproved words with punctuation ("and/or")
+const andOr = detectUnapprovedWords('Use A and/or B.');
+assert(andOr.some(u => u.word === 'and/or'), 'Expected "and/or" to be flagged');
+console.log('✔ Punctuated unapproved word detection passed');
+
+// Test 8: Noun clusters ignore prepositions, adverbs and past-tense verbs
+for (const s of ['Run the database migration script now.', 'Stop the API server process before deploy.', 'Mr. Smith opened version 2.5 of the file.']) {
+  const r = validateText(s);
+  assert(!r.sentences.some(x => x.issues.some(i => i.type === 'NOUN_CLUSTER')), `Unexpected noun cluster in: ${s}`);
+}
+console.log('✔ Noun cluster false-positive guard passed');
+
+// Test 9: Decimals and abbreviations do not split sentences
+assert.strictEqual(splitSentences('Mr. Smith opened version 2.5 of the file. Then he left.').length, 2);
+assert.strictEqual(splitSentences('Use a cache, e.g. Redis. It works.').length, 2);
+console.log('✔ Sentence splitting passed');
+
+// Test 10: Adjectival participles are not passive voice
+assert.strictEqual(detectPassiveVoice('The users are tired.'.split(/\s+/)).length, 0);
+console.log('✔ Adjectival participle guard passed');
+
+// Test 11: Strict mode flags progressive and perfect tenses; pragmatic mode does not
+const tenseStrict = validateText('The server is running. The worker has processed the job.', { mode: 'strict' });
+assert.strictEqual(tenseStrict.sentences.filter(x => x.issues.some(i => i.type === 'VERB_TENSE')).length, 2);
+const tensePragmatic = validateText('The server is running.', { mode: 'pragmatic' });
+assert(!tensePragmatic.sentences[0].issues.some(i => i.type === 'VERB_TENSE'));
+console.log('✔ Verb tense detection passed');
+
+// Test 12: Pragmatic mode caps every sentence at 25 words
+const twentySix = Array.from({ length: 26 }, () => 'word').join(' ') + '.';
+assert(validateText(twentySix).sentences[0].issues.some(i => i.type === 'SENTENCE_LENGTH'));
+console.log('✔ Pragmatic 25-word cap passed');
 
 console.log('\nAll tests passed successfully!');

@@ -1,0 +1,16 @@
+{
+  "name": "asd-ste100",
+  "owner": {
+    "name": "Dreamwalker"
+  },
+  "metadata": {
+    "description": "ASD-STE100 Simplified Technical English plugin for Claude Code: skill, /ste mod, and linter."
+  },
+  "plugins": [
+    {
+      "name": "asd-ste100",
+      "source": "./",
+      "description": "ASD-STE100 (Simplified Technical English) skill, /ste mod, and linter for Claude Code."
+    }
+  ]
+}
