@@ -99,4 +99,9 @@ assert(typesOf('A one. B two. C three. D four. E five. F six. G seven.', 'strict
 assert(!typesOf('A one. B two. C three.\n\nD four. E five. F six. G seven.', 'strict').includes('PARAGRAPH_LENGTH'));
 console.log('✔ Paragraph length check passed');
 
+// Test 16: Words that are names of built-in object properties are not unapproved words
+const builtins = validateText('Pass the constructor and toString values to the widget.');
+assert(!builtins.sentences[0].issues.some(i => i.type === 'UNAPPROVED_WORD'));
+console.log('✔ Built-in property name guard passed');
+
 console.log('\nAll tests passed successfully!');

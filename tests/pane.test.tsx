@@ -88,3 +88,12 @@ test('STE mode adds its rules to the system prompt and keeps the prompt as typed
   const composed = await ($.prompt as any).compose({ model: 'claude-opus-5-5', promptModel: 'claude-opus-5-5', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] })
   expect(composed.sections.map((s: any) => s.id)).toContain('asd-ste100:directive')
 })
+
+test('an answer with the word "constructor" draws', async ($, on) => {
+  const turn = setup(on, $)
+  await turn('Explain the widget tree', 'Provider passes data down without long chains of constructor parameters.')
+  const ui = await $.ui.mount({ plugin: 'asd-ste100', surface: 'terminal', ...pane(60) })
+  expect(await ui.find({ type: 'Text', text: /could not draw/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /constructor parameters/ })).toBeDefined()
+  await ui.unmount()
+})
