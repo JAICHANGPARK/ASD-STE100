@@ -102,7 +102,7 @@ export function findingRows({ h, Text }, findings, width, limit = 5) {
     )),
   ];
   if (findings.length > shown.length) {
-    rows.push(<Text key="more" dimColor>{`  +${findings.length - shown.length} more · /ste check <text> for the full report`}</Text>);
+    rows.push(<Text key="more" dimColor>{`  +${findings.length - shown.length} more · /asd check <text> for the full report`}</Text>);
   }
   return rows;
 }

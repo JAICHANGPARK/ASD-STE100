@@ -23,7 +23,7 @@ Former OpenAI Chief Scientist and Tesla AI Director **Andrej Karpathy** highligh
 > — [Andrej Karpathy on X](https://x.com/karpathy/status/2105819303471976479)
 
 This repository packages **ASD-STE100** into a complete ecosystem:
-1. **Claude Code Mod (`hooks/register.js`)**: An internal Claude Code extension that adds `/ste` commands, UI status indicators, and automatic prompt rewriting.
+1. **Claude Code Mod (`hooks/register.js`)**: An internal Claude Code extension that adds `/asd` commands, UI status indicators, and automatic prompt rewriting.
 2. **Claude Code Plugin (`.claude-plugin/plugin.json`)**: Installable plugin compliant with the new Claude Code plugin architecture.
 3. **Agent Skill (`skills/asd-ste100/SKILL.md`)**: A rich skill loaded by Claude Code, Google Antigravity, and other coding assistants.
 4. **Core Rule Engine & Linter (`lib/ste-engine.js`)**: Checks sentence and paragraph length, passive voice (with the Issue 9 descriptive-text exception), verb forms, multi-word nouns, unapproved words, phrasal verbs, semicolons, contractions, and Latin abbreviations. It uses lightweight heuristics (no part-of-speech tagging) and a curated word list, not the official ~900-word dictionary.
@@ -35,7 +35,7 @@ This repository packages **ASD-STE100** into a complete ecosystem:
 
 ### 1. Install as a Claude Code Plugin
 
-**Requirements:** Claude Code **v2.1.287 or later** for the mod (`/ste` command, tools, prompt directive, spinner indicator). Run `claude --version` to check. The skill works on any version that supports plugins.
+**Requirements:** Claude Code **v2.1.287 or later** for the mod (`/asd` command, tools, prompt directive, spinner indicator). Run `claude --version` to check. The skill works on any version that supports plugins.
 
 This repository is its own plugin marketplace. Install it from GitHub:
 
@@ -60,37 +60,37 @@ claude --plugin-dir /path/to/ASD-STE100
 
 To update later, run `claude plugin update asd-ste100@asd-ste100`.
 
-> **Older Claude Code (v2.1.286 and earlier):** mods were early access. The skill loads, but the mod prints `hooks module not loaded` and `/ste` does not exist. Update Claude Code, or start it with `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1`. Remove that variable after you update.
+> **Older Claude Code (v2.1.286 and earlier):** mods were early access. The skill loads, but the mod prints `hooks module not loaded` and `/asd` does not exist. Update Claude Code, or start it with `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1`. Remove that variable after you update.
 
 To see what the mod hooks and calls before you install it, run `claude plugin validate .` in a clone.
 
-### 2. Use the `/ste` Command (Mod)
+### 2. Use the `/asd` Command (Mod)
 
-Type `/` to see the `/ste` command:
+Type `/` to see the `/asd` command:
 
 ```text
-/ste on             # Activate automatic STE prompt enhancement
-/ste 80             # Set to Karpathy's 80% Pragmatic Mode (recommended)
-/ste strict         # Set to 100% Strict ASD-STE100 Mode
-/ste pane           # Show the last answer as an STE document in a side pane
-/ste check <text>   # Lint and score a sentence or paragraph
-/ste rewrite <text> # Rewrite any text into clean STE format
-/ste status         # Display active mode and status
-/ste off            # Deactivate STE mode
+/asd on             # Activate automatic STE prompt enhancement
+/asd 80             # Set to Karpathy's 80% Pragmatic Mode (recommended)
+/asd strict         # Set to 100% Strict ASD-STE100 Mode
+/asd pane           # Show the last answer as an STE document in a side pane
+/asd check <text>   # Lint and score a sentence or paragraph
+/asd rewrite <text> # Rewrite any text into clean STE format
+/asd status         # Display active mode and status
+/asd off            # Deactivate STE mode
 ```
 
-`/ste on`, `/ste 80`, `/ste strict`, and `/ste off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
+`/asd on`, `/asd 80`, `/asd strict`, and `/asd off` save the state machine-wide. The saved state applies to every project and overrides the `defaultMode` and `autoInject` plugin options.
 
 ### STE pane
 
-Ask Claude to explain something in ASD-STE100, or turn on STE mode with `/ste on`. After the answer, the STE pane opens beside the transcript. The pane shows the answer as an ASD-STE100 document:
+Ask Claude to explain something in ASD-STE100, or turn on STE mode with `/asd on`. After the answer, the STE pane opens beside the transcript. The pane shows the answer as an ASD-STE100 document:
 
 - One sentence on each line. A sentence over the word limit shows its word count in red.
 - Numbered lines show as procedure steps.
 - **WARNING**, **CAUTION**, and **NOTE** show as signal blocks.
 - Unapproved words show in red, with the approved word after them (`utilize →USE`).
 
-Pane keys: `v` view, `c` check (score and findings), `r` rewrite an answer that is not in STE, `x` close. The pane docks beside the transcript in the fullscreen layout. Use `/ste pane` to open it, and `/ste pane off` to stop it from opening by itself.
+Pane keys: `v` view, `c` check (score and findings), `r` rewrite an answer that is not in STE, `x` close. The pane docks beside the transcript in the fullscreen layout. Use `/asd pane` to open it, and `/asd pane off` to stop it from opening by itself.
 
 The mod also gives Claude two tools: `mcp__asd-ste100__validate_ste` and `mcp__asd-ste100__rewrite_ste`.
 
@@ -177,7 +177,7 @@ ASD-STE100/
 │   └── marketplace.json       # Marketplace entry (install from GitHub)
 ├── hooks/
 │   ├── hooks.json             # Mod Hook configuration
-│   └── register.js            # Claude Code Mod implementation (/ste command, UI, tools)
+│   └── register.js            # Claude Code Mod implementation (/asd command, UI, tools)
 ├── skills/
 │   └── asd-ste100/
 │       └── SKILL.md           # Authoritative Agent Skill documentation

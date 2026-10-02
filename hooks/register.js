@@ -2,10 +2,10 @@
  * ASD-STE100 Claude Code Mod
  * 
  * Provides:
- * - /ste command (on, off, 80, strict, check, rewrite, status)
+ * - /asd command (on, off, 80, strict, check, rewrite, status)
  * - Automatic prompt guidance injection when active
  * - UI status indicator & spinner suffix
- * - STE pane: the last answer as an ASD-STE100 document beside the transcript (/ste pane)
+ * - STE pane: the last answer as an ASD-STE100 document beside the transcript (/asd pane)
  * - Built-in Claude tools: mcp__asd-ste100__validate_ste & mcp__asd-ste100__rewrite_ste
  */
 
@@ -81,7 +81,7 @@ function refreshUi($) {
 }
 
 export function register(on, options = {}) {
-  // userConfig values are defaults. A mode or state saved with /ste (machine-wide $.store) overrides them.
+  // userConfig values are defaults. A mode or state saved with /asd (machine-wide $.store) overrides them.
   if (options.defaultMode === 'strict') {
     steMode = 'strict';
   }
@@ -93,7 +93,7 @@ export function register(on, options = {}) {
   on('session.start', async ($, e, next) => {
     try {
       await $.command.register({
-        name: 'ste',
+        name: 'asd',
         description: 'Control ASD-STE100 writing mode, check text, or rewrite content',
         argumentHint: '[on|off|80|strict|pane [on|off]|check <text>|rewrite <text>|status]'
       });
@@ -142,8 +142,8 @@ export function register(on, options = {}) {
     return next(e);
   });
 
-  // Handle /ste command
-  on('command.run', { command: 'ste' }, async ($, e) => {
+  // Handle /asd command
+  on('command.run', { command: 'asd' }, async ($, e) => {
     const rawArgs = (e.args || '').trim();
     const first = rawArgs.split(/\s+/)[0] || '';
     const sub = first.toLowerCase();
@@ -154,7 +154,7 @@ export function register(on, options = {}) {
       steActive = true;
       await $.store.set('ste_active', true);
       refreshUi($);
-      return { text: `[ASD-STE100] Activated. Mode: ${modeLabel()}. Each prompt now asks Claude to answer in ${modeName(steMode)}. Use /ste 80 or /ste strict to change the mode.` };
+      return { text: `[ASD-STE100] Activated. Mode: ${modeLabel()}. Each prompt now asks Claude to answer in ${modeName(steMode)}. Use /asd 80 or /asd strict to change the mode.` };
     }
 
     if (sub === 'off') {
@@ -187,7 +187,7 @@ export function register(on, options = {}) {
       if (arg === 'on' || arg === 'off') {
         paneAuto = arg === 'on';
         await $.store.set('ste_pane', paneAuto);
-        return { text: `[ASD-STE100] The STE pane ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /ste pane'}.` };
+        return { text: `[ASD-STE100] The STE pane ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /asd pane'}.` };
       }
       await openPane($);
       return { text: '[ASD-STE100] STE pane opened. v: view · c: check · r: rewrite · x: close' };
@@ -198,14 +198,14 @@ export function register(on, options = {}) {
         text: `[ASD-STE100 Status]
 - State: ${steActive ? 'ACTIVE (automatically formatting prompts)' : 'INACTIVE'}
 - Mode: ${modeLabel()}
-- Pane: ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /ste pane'}
-- Commands: /ste [on|off|80|strict|pane [on|off]|check <text>|rewrite <text>]`
+- Pane: ${paneAuto ? 'opens by itself after an answer in STE' : 'opens only with /asd pane'}
+- Commands: /asd [on|off|80|strict|pane [on|off]|check <text>|rewrite <text>]`
       };
     }
 
     if (sub === 'check') {
       if (!rest) {
-        return { text: 'Usage: /ste check <text to analyze>' };
+        return { text: 'Usage: /asd check <text to analyze>' };
       }
       const report = validateText(rest, { mode: steMode });
       let output = `[ASD-STE100 Quality Report - ${modeLabel()}]\nScore: ${report.score}/100 | Sentences: ${report.totalSentences} | Avg Words: ${report.averageWordsPerSentence} | Issues: ${report.totalIssues}\n`;
@@ -221,7 +221,7 @@ export function register(on, options = {}) {
 
     if (sub === 'rewrite') {
       if (!rest) {
-        return { text: 'Usage: /ste rewrite <text to convert to STE>' };
+        return { text: 'Usage: /asd rewrite <text to convert to STE>' };
       }
       // Call model to rewrite
       const systemInstruction = buildSystemPrompt({ mode: steMode });
@@ -245,15 +245,15 @@ export function register(on, options = {}) {
 Inspired by Andrej Karpathy's controlled language guidance for LLM understanding.
 
 Commands:
-  /ste on             - Activate automatic STE prompt enhancement
-  /ste off            - Deactivate STE enhancement
-  /ste 80             - Set to 80% Pragmatic Mode (Karpathy style, readable & fast)
-  /ste strict         - Set to 100% Strict ASD-STE100 standard
-  /ste pane           - Show the last answer as an STE document in a side pane
-  /ste pane [on|off]  - Open the pane by itself after an answer in STE, or not
-  /ste check <text>   - Lint text and inspect compliance score
-  /ste rewrite <text> - Rewrite text into STE format
-  /ste status         - Check current mode and settings`
+  /asd on             - Activate automatic STE prompt enhancement
+  /asd off            - Deactivate STE enhancement
+  /asd 80             - Set to 80% Pragmatic Mode (Karpathy style, readable & fast)
+  /asd strict         - Set to 100% Strict ASD-STE100 standard
+  /asd pane           - Show the last answer as an STE document in a side pane
+  /asd pane [on|off]  - Open the pane by itself after an answer in STE, or not
+  /asd check <text>   - Lint text and inspect compliance score
+  /asd rewrite <text> - Rewrite text into STE format
+  /asd status         - Check current mode and settings`
     };
   });
 

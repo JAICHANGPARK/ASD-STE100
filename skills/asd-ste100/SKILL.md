@@ -47,7 +47,7 @@ ASD-STE100 was created by aerospace manufacturers (ASD, formerly AECMA) to elimi
 
 ## 3. ASD-STE100 Writing Rules (Issue 9)
 
-ASD-STE100 Issue 9 (January 2025) is an international standard with **53 writing rules in 9 sections** and a dictionary of about 900 approved words. The rule labels below (for example `STE 3.6`) match the labels in the `/ste check` linter report.
+ASD-STE100 Issue 9 (January 2025) is an international standard with **53 writing rules in 9 sections** and a dictionary of about 900 approved words. The rule labels below (for example `STE 3.6`) match the labels in the `/asd check` linter report.
 
 > This skill summarizes the rules. It does not contain the official dictionary. To get the full standard and dictionary, request a free copy at [asd-ste100.org](https://www.asd-ste100.org/). Issue 9 calls "technical names" **technical nouns**.
 
