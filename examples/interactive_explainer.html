@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASD-STE100 & Karpathy 80% Mode Interactive Explainer</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+    h1 { font-size: 2rem; font-weight: 700; color: var(--accent); margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); font-size: 1rem; line-height: 1.5; }
+    .quote-box { background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--accent); padding: 1rem; border-radius: 4px; margin: 1.5rem 0; font-size: 0.95rem; color: #bae6fd; font-style: italic; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .tab-btn { background: #334155; border: none; color: var(--text); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+    .tab-btn.active { background: var(--accent); color: #0f172a; }
+    textarea { width: 100%; height: 110px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0.75rem; font-size: 0.95rem; resize: vertical; margin-bottom: 1rem; }
+    textarea:focus { outline: none; border-color: var(--accent); }
+    .btn { background: var(--accent); color: #0f172a; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: var(--accent-hover); }
+    .results { margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+    .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .badge-success { background: rgba(52, 211, 153, 0.2); color: var(--success); }
+    .badge-warning { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+    .badge-danger { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
+    .rule-item { background: #0f172a; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-left: 3px solid var(--warning); }
+    .rule-item.clean { border-left-color: var(--success); }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; }
+    .stat-box { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+    .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ASD-STE100 & 80% Pragmatic Mode</h1>
+      <p class="subtitle">Controlled technical English for lightning-fast comprehension and zero ambiguity.</p>
+      <div class="quote-box">
+        "Ask your LLM to explain something in ASD-STE100... Sometimes I've tried to soften it a bit e.g. ask for '80% of the way to ASD-STE100' because the spec is quite stringent." — Andrej Karpathy
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tab-pragmatic" onclick="setMode('pragmatic')">80% Pragmatic Mode (Karpathy)</button>
+        <button class="tab-btn" id="tab-strict" onclick="setMode('strict')">100% Strict ASD-STE100</button>
+      </div>
+
+      <label for="input-text" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Test or Draft Your Sentence:</label>
+      <textarea id="input-text">In order to properly utilize the database, it is necessary that authentication be performed prior to commencing queries, as well as terminating all stale sessions.</textarea>
+      
+      <button class="btn" onclick="analyzeText()">Analyze with STE Engine</button>
+
+      <div class="results" id="results" style="display: none;">
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-val" id="stat-score">0</div>
+            <div class="stat-label">STE Score</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-words">0</div>
+            <div class="stat-label">Word Count (Max 25)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-issues">0</div>
+            <div class="stat-label">Issues Found</div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 0.75rem; font-size: 1.1rem;">Diagnostic Findings:</h3>
+        <div id="findings-list"></div>
+
+        <h3 style="margin: 1.25rem 0 0.5rem 0; font-size: 1.1rem;">Recommended STE Rewrite:</h3>
+        <div class="rule-item clean" id="suggested-rewrite">
+          <strong>Suggested:</strong> Log in before you send queries to the database. Close all inactive sessions.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = 'pragmatic';
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('tab-pragmatic').classList.toggle('active', mode === 'pragmatic');
+      document.getElementById('tab-strict').classList.toggle('active', mode === 'strict');
+      analyzeText();
+    }
+
+    const UNAPPROVED = {
+      'utilize': 'use',
+      'terminate': 'stop',
+      'terminating': 'stopping',
+      'commence': 'start',
+      'commencing': 'starting',
+      'prior to': 'before',
+      'in order to': 'to',
+      'as well as': 'and',
+      'properly': 'correctly (or provide exact steps)'
+    };
+
+    function analyzeText() {
+      const text = document.getElementById('input-text').value.trim();
+      const words = text.split(/\s+/).filter(Boolean);
+      const wordCount = words.length;
+      const issues = [];
+
+      // Length check
+      const maxLimit = currentMode === 'strict' ? 20 : 25;
+      if (wordCount > maxLimit) {
+        issues.push({
+          type: 'LENGTH',
+          msg: `Sentence has ${wordCount} words (exceeds limit of ${maxLimit} words). Split into shorter sentences.`
+        });
+      }
+
+      // Check unapproved
+      const lower = text.toLowerCase();
+      for (const [bad, good] of Object.entries(UNAPPROVED)) {
+        if (lower.includes(bad)) {
+          issues.push({
+            type: 'VOCABULARY',
+            msg: `"${bad}" is unapproved. Use "${good}" instead.`
+          });
+        }
+      }
+
+      // Passive check
+      if (/is performed|be performed|was executed|were tested/i.test(text)) {
+        issues.push({
+          type: 'VOICE',
+          msg: 'Passive construction detected. State who or what performs the action.'
+        });
+      }
+
+      // Score
+      const score = Math.max(10, 100 - (issues.length * 18));
+
+      // Update UI
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('stat-score').innerText = score + '/100';
+      document.getElementById('stat-words').innerText = wordCount;
+      document.getElementById('stat-issues').innerText = issues.length;
+
+      const findingsContainer = document.getElementById('findings-list');
+      findingsContainer.innerHTML = '';
+
+      if (issues.length === 0) {
+        findingsContainer.innerHTML = '<div class="rule-item clean">✔ Excellent! Complies cleanly with ' + (currentMode === 'strict' ? '100% ASD-STE100' : '80% Pragmatic Mode') + '.</div>';
+      } else {
+        issues.forEach(i => {
+          const div = document.createElement('div');
+          div.className = 'rule-item';
+          div.innerHTML = `<strong>[${i.type}]:</strong> ${i.msg}`;
+          findingsContainer.appendChild(div);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
